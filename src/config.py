@@ -1,23 +1,17 @@
 """
-Application configuration.
-Midad Books - كتب مداد
+Application Configuration
+All constants and settings in one place
 """
 
-# ============================================================================
-# STOCK ALERTS
-# ============================================================================
+# Stock alerts
 LOW_STOCK_THRESHOLD = 2
 CRITICAL_STOCK_THRESHOLD = 1
 
-# ============================================================================
-# DEFAULT VALUES
-# ============================================================================
+# Default values
 DEFAULT_PACKAGING_COST = 1.0
 DEFAULT_PLATFORM = "Vinted"
 
-# ============================================================================
-# PLATFORMS
-# ============================================================================
+# Platforms
 PLATFORMS = [
     "Vinted",
     "Instagram",
@@ -27,11 +21,8 @@ PLATFORMS = [
     "Other"
 ]
 
-# ============================================================================
-# GENRES - Comprehensive Arabic Literature Categories
-# ============================================================================
+# Genres
 GENRES = [
-    # Fiction
     "Fiction - General",
     "Fiction - Historical",
     "Fiction - Contemporary",
@@ -40,8 +31,6 @@ GENRES = [
     "Fiction - Mystery/Thriller",
     "Fiction - Romance",
     "Fiction - Horror",
-    
-    # Non-Fiction
     "Self-Help & Personal Development",
     "Psychology",
     "Philosophy",
@@ -52,17 +41,11 @@ GENRES = [
     "Politics & Society",
     "Business & Economics",
     "Science & Nature",
-    
-    # Arabic Classics
     "Arabic Classics",
     "Poetry - Classical",
     "Poetry - Modern",
-    
-    # Children & Young Adult
     "Children's Books",
     "Young Adult",
-    
-    # Other
     "Art & Photography",
     "Cooking",
     "Travel",
@@ -70,118 +53,115 @@ GENRES = [
     "Other"
 ]
 
-# ============================================================================
-# UI SETTINGS
-# ============================================================================
+# UI settings
 MAX_SALES_HISTORY = 20
 CACHE_TTL_SECONDS = 60
 
-# ============================================================================
-# PROFIT WARNINGS
-# ============================================================================
+# Profit warnings
 LOW_MARGIN_THRESHOLD = 10  # percent
 HIGH_MARGIN_THRESHOLD = 50  # percent
 
-# ============================================================================
-# DATE FORMATS
-# ============================================================================
+# Date formats
 DATE_FORMAT = "%Y-%m-%d"
-DATETIME_FORMAT = "%Y-%m-%d"  # Removed time component
+DATETIME_FORMAT = "%Y-%m-%d"
 DISPLAY_DATE_FORMAT = "%d/%m/%Y"
 
-# ============================================================================
-# QUICK MESSAGES - Templates for customer communication
-# ============================================================================
-QUICK_MESSAGES = {
-    "order_confirmation": {
-        "title": "📦 Order Confirmation",
-        "message": """Hello! 👋
+# Message categories
+MESSAGE_CATEGORIES = [
+    "General",
+    "Shipping",
+    "Promotion",
+    "Follow-up",
+    "Support",
+    "Custom"
+]
 
-Thank you for your order! Your book(s) will be carefully packed and shipped within 1-2 business days.
+# Default quick messages
+DEFAULT_QUICK_MESSAGES = {
+    "shipped": {
+        "title": "📦 Shipped Notification",
+        "category": "Shipping",
+        "message": """Hello 🌸📦
 
-📚 Books ordered: [LIST HERE]
-💰 Total: €[AMOUNT]
-📦 Tracking: [TRACKING NUMBER]
+Good news! Your order has been shipped today 🚚✨
 
-Looking forward to serving you again!
+We hope it reaches you very soon 🤍
 
-Best regards,
-Midad Books Team"""
+نتمنى أن يصلك في أقرب وقت 🌷
+
+Happy reading in advance 📚💫
+
+قراءة ممتعة 🤍
+
+Kind regards,
+Midad | كتب عربية 🪶🍂
+Instagram: @midad.books"""
     },
-    
-    "shipping_notification": {
-        "title": "🚚 Shipping Notification",
-        "message": """Hello! 📦
-
-Great news! Your order has been shipped today.
-
-📦 Tracking number: [TRACKING]
-🚚 Expected delivery: [DATE]
-
-You can track your package here: [LINK]
-
-Thank you for choosing Midad Books!
-
-Best regards,
-Midad Books"""
-    },
-    
     "thank_you": {
-        "title": "💚 Thank You Message",
-        "message": """Thank you so much for your order! 🙏
+        "title": "💖 Thank You",
+        "category": "Follow-up",
+        "message": """Thank you so much, your message truly made our day 🥰💖
+شكراً لكِ من القلب 🌸
 
-We hope you enjoy your book(s)! 📚
+InshaaAllah, we will add more books of this kind very soon 📚✨
 
-If you're satisfied with your purchase, we'd appreciate a positive review! ⭐
+تابعينا دائماً، القادم أجمل بإذن الله 💫
 
-Feel free to reach out anytime for new arrivals or recommendations.
-
-Best wishes,
-Midad Books 📖"""
+Wishing you a wonderful reading experience 🌸"""
     },
-    
-    "payment_reminder": {
-        "title": "💳 Payment Reminder",
-        "message": """Hello! 👋
+    "welcome_discount": {
+        "title": "🌸 Welcome + Discount",
+        "category": "Promotion",
+        "message": """Welcome to Midad.Books 🤍📚
 
-This is a friendly reminder about your pending order:
+We're happy to have you here ✨🥰
 
-📚 Books: [LIST]
-💰 Total: €[AMOUNT]
+If you're interested in this book or any other Arabic titles, we currently offer up to 20% off on bundles 🍂
 
-Please complete payment at your earliest convenience to reserve these books.
+Feel free to ask anything — we'll be happy to help 🤎
 
-Payment methods: [METHODS]
+يسعدنا خدمتك دائماً 🤍
 
-Thank you!
-Midad Books"""
+Kind regards,
+Midad | كتب عربية 🪶🍂
+Instagram: @midad.books"""
     },
-    
-    "book_inquiry": {
-        "title": "📖 Book Inquiry Response",
-        "message": """Hello! 👋
+    "price_inquiry": {
+        "title": "💰 Price Response",
+        "category": "General",
+        "message": """Hello 😊✨
 
-Thank you for your interest in [BOOK TITLE]!
+Thank you for your interest 🤍📚
 
-✅ Availability: In stock
-💰 Price: €[PRICE]
-📦 Condition: [CONDITION]
-📸 Photos: [Available upon request]
+The price for this book is €12💰
+If you're interested in multiple books, I can offer a special bundle discount 🌸✨
 
-Would you like to proceed with the order?
+يسعدني مساعدتك 🤍
 
-Best regards,
-Midad Books"""
+Kind regards,
+Midad | كتب عربية 🪶🍂"""
     },
-    
-    "signature": {
-        "title": "✍️ Standard Signature",
-        "message": """Best regards,
-Midad Books 📚
-كتب مداد
+    "order_ready": {
+        "title": "✅ Order Ready",
+        "category": "General",
+        "message": """Hello, Your order is ready 🤎
 
-📧 Email: [YOUR EMAIL]
-📱 Phone: [YOUR PHONE]
-🛒 Platform: [PLATFORM]"""
+Kind regards,
+Midad | كتب عربية 🪶🍂
+Instagram: @midad.books"""
+    },
+    "general_welcome": {
+        "title": "👋 General Welcome",
+        "category": "General",
+        "message": """Hello☺️,
+
+Welcome to Midad.Books, a page for Arabic books. If you're interested in this book or any other titles, we currently offer discounts of up to 20% off.
+
+Feel free to ask ☺️we'll be happy to help you.🤎
+
+Kind regards,
+Midad | كتب عربية 🪶🍂
+Instagram: @midad.books
+قراءة ممتعة دائماً 🤍"""
     }
 }

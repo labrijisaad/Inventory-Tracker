@@ -1,8 +1,9 @@
 """
-Midad Books - Database with Customer Support
+Database Operations
+SQLite database management with SQLModel
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
 import uuid
@@ -10,51 +11,46 @@ import uuid
 import pandas as pd
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 
-from src.config import PLATFORMS, GENRES  # Import from config
+from src.config import PLATFORMS, GENRES
 
 # Database path
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DB_PATH = DATA_DIR / "midad.db"
 
 print(f"📂 Database path: {DB_PATH}")
 
 
 # ============================================================================
-# REMOVED ENUMS - Now using config lists
-# ============================================================================
-# class Platform(str, Enum):  # REMOVED
-# class Genre(str, Enum):     # REMOVED
-
-
-# ============================================================================
 # MODELS
 # ============================================================================
 class Customer(SQLModel, table=True):
-    """Customer database with username as ID."""
+    """Customer database."""
+    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
+    
     id: Optional[int] = Field(default=None, primary_key=True)
-    vinted_username: str = Field(index=True, unique=True)  # Can be any platform username
+    vinted_username: str = Field(index=True, unique=True)
     name: str
     platform_preference: str = Field(default="Vinted")
     notes: str = ""
     created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     
-    # Relationship
     sales: list["Sale"] = Relationship(back_populates="customer_rel")
 
 
 class Book(SQLModel, table=True):
     """Book in inventory."""
+    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
     author: str = ""
-    genre: str = Field(default="Other")  # Now uses string from config
+    genre: str = Field(default="Other")
     buy_price: float = Field(default=0, ge=0)
     target_price: float = Field(default=0, ge=0)
     stock: int = Field(default=1, ge=0)
     created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     notes: str = ""
     
-    # Relationship
     sales: list["Sale"] = Relationship(back_populates="book")
     
     @property
@@ -67,30 +63,36 @@ class Book(SQLModel, table=True):
 
 
 class Sale(SQLModel, table=True):
-    """Sale record - supports bundles via bundle_id."""
+    """Sale record."""
+    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
+    
     id: Optional[int] = Field(default=None, primary_key=True)
-    date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))  # Date only
+    date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     qty: int = Field(default=1, ge=1)
     price: float = Field(ge=0)
     packaging_per_book: float = Field(default=0, ge=0)
     total: float = Field(ge=0)
-    platform: str = Field(default="Vinted")  # Now uses string from config
-    
-    # Bundle support
+    platform: str = Field(default="Vinted")
     bundle_id: Optional[str] = Field(default=None, index=True)
     
-    # Foreign keys
     book_id: Optional[int] = Field(default=None, foreign_key="book.id")
     book: Optional[Book] = Relationship(back_populates="sales")
     
-    customer_id: int = Field(foreign_key="customer.id")  # REQUIRED
+    customer_id: int = Field(foreign_key="customer.id")
     customer_rel: Customer = Relationship(back_populates="sales")
 
 
-# ============================================================================
-# Rest of database.py stays the same...
-# (Keep all other functions as they are)
-# ============================================================================
+class QuickMessage(SQLModel, table=True):
+    """Quick message templates."""
+    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(index=True)
+    category: str = Field(default="General")
+    message: str
+    order_position: int = Field(default=0)
+    created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+    updated_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
 
 
 # ============================================================================
@@ -103,28 +105,90 @@ def get_engine():
 
 
 def init_db():
-    """Create tables."""
+    """Create tables and initialize default messages."""
     print("🔧 Initializing database...")
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
+    
+    # Initialize default messages if empty
+    with Session(engine) as session:
+        existing = session.exec(select(QuickMessage)).first()
+        if not existing:
+            print("📝 Creating default quick messages...")
+            from src.config import DEFAULT_QUICK_MESSAGES
+            for i, (key, msg) in enumerate(DEFAULT_QUICK_MESSAGES.items()):
+                quick_msg = QuickMessage(
+                    title=msg['title'],
+                    category=msg['category'],
+                    message=msg['message'],
+                    order_position=i
+                )
+                session.add(quick_msg)
+            session.commit()
+            print("✅ Default messages created")
+    
     print("✅ Database initialized")
+
+
+# ============================================================================
+# HELPER: STANDARDIZE DATE FORMAT
+# ============================================================================
+def standardize_date(sale_date) -> str:
+    """
+    Convert any date format to YYYY-MM-DD string.
+    Handles: date objects, DD/MM/YYYY, YYYY-MM-DD, datetime strings
+    """
+    if not sale_date:
+        return datetime.now().strftime("%Y-%m-%d")
+    
+    try:
+        # If it's already a date/datetime object
+        if isinstance(sale_date, (date, datetime)):
+            return sale_date.strftime("%Y-%m-%d")
+        
+        # If it's a string
+        sale_date_str = str(sale_date).strip()
+        
+        # Try DD/MM/YYYY format
+        if '/' in sale_date_str:
+            date_obj = datetime.strptime(sale_date_str, "%d/%m/%Y")
+            return date_obj.strftime("%Y-%m-%d")
+        
+        # Try YYYY-MM-DD format (may have time component)
+        if ' ' in sale_date_str:
+            # Remove time component if present
+            sale_date_str = sale_date_str.split()[0]
+        
+        # Parse YYYY-MM-DD
+        date_obj = datetime.strptime(sale_date_str, "%Y-%m-%d")
+        return date_obj.strftime("%Y-%m-%d")
+        
+    except Exception as e:
+        print(f"⚠️ Date parse error '{sale_date}', using today: {e}")
+        return datetime.now().strftime("%Y-%m-%d")
 
 
 # ============================================================================
 # CUSTOMER OPERATIONS
 # ============================================================================
 def get_customers() -> list[dict]:
-    """Get all customers with computed stats."""
-    print(f"\n👥 get_customers()")
-    
+    """Get all customers with stats."""
     with Session(get_engine()) as session:
         customers = session.exec(select(Customer).order_by(Customer.created_at.desc())).all()
-        print(f"   Found {len(customers)} customers")
         
         result = []
         for c in customers:
             customer_sales = [s for s in c.sales]
-            total_purchases = len(set(s.bundle_id or s.id for s in customer_sales))
+            
+            # Count unique orders (bundle_id or individual sale)
+            unique_orders = set()
+            for s in customer_sales:
+                if s.bundle_id:
+                    unique_orders.add(s.bundle_id)
+                else:
+                    unique_orders.add(f"sale_{s.id}")
+            
+            total_purchases = len(unique_orders)
             total_spent = sum(s.total for s in customer_sales)
             last_purchase = max([s.date for s in customer_sales]) if customer_sales else "Never"
             
@@ -143,58 +207,23 @@ def get_customers() -> list[dict]:
         return result
 
 
-def get_or_create_customer(vinted_username: str, name: str, platform: str) -> Customer:
-    """Get existing customer or create new one."""
-    print(f"\n👤 get_or_create_customer(username={vinted_username}, name={name})")
-    
-    with Session(get_engine()) as session:
-        customer = session.exec(
-            select(Customer).where(Customer.vinted_username == vinted_username)
-        ).first()
-        
-        if customer:
-            print(f"   ✅ Found existing customer: {customer.name}")
-            if platform:
-                customer.platform_preference = platform
-                session.commit()
-            return customer
-        else:
-            customer = Customer(
-                vinted_username=vinted_username,
-                name=name,
-                platform_preference=platform,
-            )
-            session.add(customer)
-            session.commit()
-            session.refresh(customer)
-            print(f"   ✅ Created new customer: {customer.name}")
-            return customer
-
-
 # ============================================================================
 # BOOK OPERATIONS
 # ============================================================================
 def get_books(filter_type: Optional[str] = None) -> list[dict]:
-    """Get all books with COMPUTED status."""
-    print(f"\n📚 get_books(filter_type={filter_type})")
-    
+    """Get all books with computed status."""
     with Session(get_engine()) as session:
         query = select(Book).order_by(Book.id.desc())
         books = session.exec(query).all()
-        
-        print(f"   Found {len(books)} total books in database")
         
         result = []
         for b in books:
             status = "Sold Out" if b.stock == 0 else "Active"
             
-            print(f"   Book #{b.id}: {b.title[:20]} | Stock: {b.stock} | Status: {status}")
-            
+            # Apply filter
             if filter_type == "active" and b.stock == 0:
-                print(f"      ❌ Filtered out (sold)")
                 continue
             if filter_type == "sold" and b.stock > 0:
-                print(f"      ❌ Filtered out (active)")
                 continue
             
             result.append({
@@ -210,16 +239,14 @@ def get_books(filter_type: Optional[str] = None) -> list[dict]:
                 "created_at": b.created_at,
             })
         
-        print(f"   Returning {len(result)} books after filter")
         return result
 
 
 def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -> tuple[bool, str]:
     """Save multiple books with validation."""
-    print(f"\n💾 save_books_bulk(filter_type={filter_type}, {len(books_data)} books)")
-    
     try:
         with Session(get_engine()) as session:
+            # Get existing books based on filter
             query = select(Book)
             if filter_type == "active":
                 query = query.where(Book.stock > 0)
@@ -227,15 +254,15 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                 query = query.where(Book.stock == 0)
             
             existing = {b.id: b for b in session.exec(query).all()}
-            print(f"   Found {len(existing)} existing books in filter")
             processed_ids = set()
             
+            # Process each book
             for data in books_data:
                 title = str(data.get("title", "")).strip()
                 if not title:
                     continue
                 
-                # ✅ VALIDATION
+                # Validate numbers
                 try:
                     buy_price = float(data.get("buy_price", 0) or 0)
                     target_price = float(data.get("target_price", 0) or 0)
@@ -251,6 +278,7 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                 except ValueError as e:
                     return False, f"❌ Invalid number format for '{title}': {e}"
                 
+                # Check if book exists
                 book_id = data.get("id")
                 is_existing = (
                     book_id is not None 
@@ -259,63 +287,56 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                 )
                 
                 if is_existing:
+                    # Update existing book
                     book = existing[int(book_id)]
-                    old_stock = book.stock
                     book.title = title
                     book.author = str(data.get("author", ""))
-                    book.genre = str(data.get("genre", Genre.OTHER.value))
+                    book.genre = str(data.get("genre", "Other"))
                     book.buy_price = buy_price
                     book.target_price = target_price
                     book.stock = stock
                     book.notes = str(data.get("notes", ""))
-                    print(f"   UPDATE Book #{book_id}: {title[:20]} | Stock: {old_stock} → {book.stock}")
                     processed_ids.add(int(book_id))
                 else:
+                    # Create new book
                     book = Book(
                         title=title,
                         author=str(data.get("author", "")),
-                        genre=str(data.get("genre", Genre.OTHER.value)),
+                        genre=str(data.get("genre", "Other")),
                         buy_price=buy_price,
                         target_price=target_price,
                         stock=stock,
                         notes=str(data.get("notes", "")),
                     )
                     session.add(book)
-                    print(f"   CREATE: {title[:20]} | Stock: {stock}")
             
+            # Handle deleted rows (only if filter is active)
             if filter_type:
                 for book_id, book in existing.items():
                     if book_id not in processed_ids:
+                        # Check if book has sales history
                         if len(book.sales) > 0:
-                            return False, f"Cannot delete '{book.title}' - has sales history!"
+                            return False, f"❌ Cannot delete '{book.title}' - has sales history!"
                         session.delete(book)
-                        print(f"   DELETE Book #{book_id}")
             
             session.commit()
-            print("   ✅ Committed to database")
             return True, "✅ Saved successfully"
             
     except Exception as e:
-        print(f"   ❌ ERROR: {e}")
-        return False, f"Error: {str(e)}"
+        return False, f"❌ Error: {str(e)}"
 
 
 # ============================================================================
 # SALE OPERATIONS
 # ============================================================================
 def get_sales() -> list[dict]:
-    """Get all sales with book and customer details."""
-    print(f"\n💰 get_sales()")
-    
+    """Get all sales with details."""
     with Session(get_engine()) as session:
         sales = session.exec(select(Sale).order_by(Sale.id.desc())).all()
-        print(f"   Found {len(sales)} sales")
         
         result = []
         for s in sales:
             book = session.get(Book, s.book_id) if s.book_id else None
-            
-            print(f"   Sale #{s.id}: Book #{s.book_id} ({book.title if book else 'Unknown'}) | Qty: {s.qty} | Total: €{s.total} | Bundle: {s.bundle_id or 'Single'}")
             
             result.append({
                 "id": s.id,
@@ -336,19 +357,11 @@ def get_sales() -> list[dict]:
         return result
 
 
-def add_sale(
-    book_id: int, 
-    qty: int, 
-    total_paid: float, 
-    packaging_per_book: float,
-    customer_name: str,
-    customer_username: str,
-    platform: str,
-    sale_date: Optional[str] = None
-) -> tuple[bool, str]:
+def add_sale(book_id: int, qty: int, total_paid: float, packaging_per_book: float,
+             customer_name: str, customer_username: str, platform: str,
+             sale_date: Optional[str] = None) -> tuple[bool, str]:
     """Record single book sale."""
-    print(f"\n🔥 add_sale(book_id={book_id}, qty={qty}, total_paid={total_paid}, customer={customer_name}/@{customer_username})")
-    
+    # Validation
     if qty < 1:
         return False, "❌ Quantity must be at least 1"
     if total_paid < 0:
@@ -356,11 +369,11 @@ def add_sale(
     if not customer_name.strip():
         return False, "❌ Customer name required"
     if not customer_username.strip():
-        return False, "❌ Vinted username required"
+        return False, "❌ Username required"
     
     try:
         with Session(get_engine()) as session:
-            # Get/create customer
+            # Get or create customer
             customer = session.exec(
                 select(Customer).where(Customer.vinted_username == customer_username.strip())
             ).first()
@@ -374,31 +387,26 @@ def add_sale(
                 session.add(customer)
                 session.commit()
                 session.refresh(customer)
-                print(f"   ✅ Created new customer: {customer.name} (@{customer.vinted_username})")
-            else:
-                print(f"   ✅ Found existing customer: {customer.name} (@{customer.vinted_username})")
             
             # Get book
             book = session.get(Book, book_id)
             if not book:
                 return False, "❌ Book not found"
             
-            print(f"   ✅ Book: {book.title} | Stock: {book.stock}")
-            
+            # Check stock
             if book.stock < qty:
                 return False, f"❌ Not enough stock! Only {book.stock} available"
             
-            # Calculate
+            # Calculate financials
             price_per_book = total_paid / qty
             total_packaging = packaging_per_book * qty
             revenue = total_paid - total_packaging
             cost = book.buy_price * qty
             profit = revenue - cost
             
-            print(f"   💰 Revenue: €{revenue:.2f} | Cost: €{cost:.2f} | Profit: €{profit:.2f}")
-            
-            # Use custom date or now
-            date_str = sale_date or datetime.now().strftime("%Y-%m-%d %H:%M")
+            # ✅ Standardize date to YYYY-MM-DD
+            date_str = standardize_date(sale_date)
+            print(f"📅 Recording sale with date: {date_str}")
             
             # Create sale
             sale = Sale(
@@ -414,37 +422,23 @@ def add_sale(
             )
             session.add(sale)
             
-            # Reduce stock
-            old_stock = book.stock
+            # Update stock
             book.stock -= qty
-            print(f"   🔥 REDUCING STOCK: {old_stock} - {qty} = {book.stock}")
             
             session.commit()
-            print(f"   ✅ Transaction committed!")
             
             new_status = "Sold Out" if book.stock == 0 else "Active"
             return True, f"✅ Sold {qty}x '{book.title}' for €{total_paid:.2f} | Profit: €{profit:.2f} | Stock: {book.stock} ({new_status})"
             
     except Exception as e:
-        print(f"   ❌ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
         return False, f"❌ Error: {str(e)}"
 
 
-def add_bundle_sale(
-    book_ids: list[int],
-    quantities: list[int],
-    total_paid: float,
-    packaging_per_book: float,
-    customer_name: str,
-    customer_username: str,
-    platform: str,
-    sale_date: Optional[str] = None
-) -> tuple[bool, str]:
-    """Record bundle sale (multiple books in one transaction)."""
-    print(f"\n🎁 add_bundle_sale(books={book_ids}, customer={customer_name}/@{customer_username})")
-    
+def add_bundle_sale(book_ids: list[int], quantities: list[int], total_paid: float,
+                   packaging_per_book: float, customer_name: str, customer_username: str,
+                   platform: str, sale_date: Optional[str] = None) -> tuple[bool, str]:
+    """Record bundle sale."""
+    # Validation
     if len(book_ids) < 2:
         return False, "❌ Bundle must have at least 2 books"
     if len(book_ids) != len(quantities):
@@ -456,7 +450,7 @@ def add_bundle_sale(
     
     try:
         with Session(get_engine()) as session:
-            # Get/create customer
+            # Get or create customer
             customer = session.exec(
                 select(Customer).where(Customer.vinted_username == customer_username.strip())
             ).first()
@@ -470,11 +464,8 @@ def add_bundle_sale(
                 session.add(customer)
                 session.commit()
                 session.refresh(customer)
-                print(f"   ✅ Created customer: {customer.name}")
-            else:
-                print(f"   ✅ Found customer: {customer.name}")
             
-            # Verify all books exist and have stock
+            # Validate all books and stock
             books = []
             for book_id, qty in zip(book_ids, quantities):
                 book = session.get(Book, book_id)
@@ -484,7 +475,7 @@ def add_bundle_sale(
                     return False, f"❌ Not enough stock for '{book.title}'! Only {book.stock} available"
                 books.append(book)
             
-            # Calculate pricing
+            # Calculate financials
             total_books = sum(quantities)
             price_per_book = total_paid / total_books
             total_packaging = packaging_per_book * total_books
@@ -492,18 +483,14 @@ def add_bundle_sale(
             total_cost = sum(book.buy_price * qty for book, qty in zip(books, quantities))
             profit = revenue - total_cost
             
-            print(f"   📦 Total books: {total_books}")
-            print(f"   💰 Price per book: €{price_per_book:.2f}")
-            print(f"   💵 Revenue: €{revenue:.2f} | Cost: €{total_cost:.2f} | Profit: €{profit:.2f}")
-            
             # Generate bundle ID
             bundle_id = str(uuid.uuid4())[:8]
-            print(f"   🎁 Bundle ID: {bundle_id}")
             
-            # Use custom date or now
-            date_str = sale_date or datetime.now().strftime("%Y-%m-%d %H:%M")
+            # ✅ Standardize date to YYYY-MM-DD
+            date_str = standardize_date(sale_date)
+            print(f"📅 Recording bundle sale with date: {date_str}")
             
-            # Create one Sale per book type
+            # Create sales for each book in bundle
             for book, qty in zip(books, quantities):
                 sale_total = price_per_book * qty
                 
@@ -520,47 +507,35 @@ def add_bundle_sale(
                 )
                 session.add(sale)
                 
-                # Reduce stock
-                old_stock = book.stock
+                # Update stock
                 book.stock -= qty
-                print(f"   📕 {book.title[:20]}: {old_stock} - {qty} = {book.stock}")
             
             session.commit()
-            print(f"   ✅ Bundle transaction committed!")
             
             return True, f"✅ Bundle sold: {total_books} books for €{total_paid:.2f} | Profit: €{profit:.2f}"
             
     except Exception as e:
-        print(f"   ❌ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
         return False, f"❌ Error: {str(e)}"
 
 
 def delete_sale(sale_id: int) -> tuple[bool, str]:
     """Delete sale and restore stock."""
-    print(f"\n🗑️ delete_sale(sale_id={sale_id})")
-    
     try:
         with Session(get_engine()) as session:
             sale = session.get(Sale, sale_id)
             if not sale:
                 return False, "❌ Sale not found"
             
-            # If part of bundle, delete all bundle sales
+            # If part of bundle, delete entire bundle
             if sale.bundle_id:
-                print(f"   🎁 This is a bundle sale (ID: {sale.bundle_id})")
                 bundle_sales = session.exec(
                     select(Sale).where(Sale.bundle_id == sale.bundle_id)
                 ).all()
-                
-                print(f"   Found {len(bundle_sales)} items in bundle")
                 
                 for s in bundle_sales:
                     book = session.get(Book, s.book_id)
                     if book:
                         book.stock += s.qty
-                        print(f"   📦 Restored {s.qty}x {book.title[:20]} | Stock now: {book.stock}")
                     session.delete(s)
                 
                 session.commit()
@@ -570,14 +545,12 @@ def delete_sale(sale_id: int) -> tuple[bool, str]:
                 book = session.get(Book, sale.book_id)
                 if book:
                     book.stock += sale.qty
-                    print(f"   📦 Restoring stock: {book.stock}")
                 
                 session.delete(sale)
                 session.commit()
                 return True, f"✅ Sale deleted, stock restored"
             
     except Exception as e:
-        print(f"   ❌ ERROR: {e}")
         return False, f"❌ Error: {str(e)}"
 
 
@@ -591,6 +564,7 @@ def get_stats() -> dict:
         sales = list(session.exec(select(Sale)).all())
         customers = list(session.exec(select(Customer)).all())
         
+        # Book stats
         active_books = [b for b in books if b.stock > 0]
         sold_books = [b for b in books if b.stock == 0]
         
@@ -598,17 +572,19 @@ def get_stats() -> dict:
         stock_value = sum(b.stock * b.buy_price for b in books)
         potential_revenue = sum(b.stock * b.target_price for b in books if b.target_price > 0)
         
+        # Sales stats
         revenue = sum(s.total for s in sales)
         items_sold = sum(s.qty for s in sales)
         total_packaging = sum(s.packaging_per_book * s.qty for s in sales)
         
-        # COGS
+        # Calculate COGS (Cost of Goods Sold)
         cogs = 0
         for sale in sales:
             book = session.get(Book, sale.book_id)
             if book:
                 cogs += sale.qty * book.buy_price
         
+        # Profit calculation
         net_revenue = revenue - total_packaging
         profit = net_revenue - cogs
         
@@ -617,14 +593,14 @@ def get_stats() -> dict:
         for sale in sales:
             platform_sales[sale.platform] = platform_sales.get(sale.platform, 0) + sale.total
         
-        # Low margin books
+        # Low margin books warning
         low_margin_books = [
             {"title": b.title, "buy": b.buy_price, "target": b.target_price}
             for b in active_books 
             if b.target_price > 0 and b.target_price < b.buy_price
         ]
         
-        # Bundle stats
+        # Bundle count
         bundle_ids = set(s.bundle_id for s in sales if s.bundle_id)
         bundle_count = len(bundle_ids)
         
@@ -646,3 +622,85 @@ def get_stats() -> dict:
             "customer_count": len(customers),
             "bundle_count": bundle_count,
         }
+
+
+# ============================================================================
+# QUICK MESSAGES OPERATIONS
+# ============================================================================
+def get_quick_messages() -> list[dict]:
+    """Get all quick messages."""
+    with Session(get_engine()) as session:
+        messages = session.exec(select(QuickMessage).order_by(QuickMessage.order_position)).all()
+        return [{
+            "id": m.id,
+            "title": m.title,
+            "category": m.category,
+            "message": m.message,
+            "order_position": m.order_position,
+            "created_at": m.created_at,
+            "updated_at": m.updated_at,
+        } for m in messages]
+
+
+def add_quick_message(title: str, category: str, message: str) -> tuple[bool, str]:
+    """Add new quick message."""
+    if not title.strip():
+        return False, "❌ Title is required"
+    if not message.strip():
+        return False, "❌ Message is required"
+    
+    try:
+        with Session(get_engine()) as session:
+            # Get next position
+            max_pos = session.exec(select(QuickMessage)).all()
+            next_pos = len(max_pos)
+            
+            quick_msg = QuickMessage(
+                title=title.strip(),
+                category=category,
+                message=message.strip(),
+                order_position=next_pos
+            )
+            session.add(quick_msg)
+            session.commit()
+            return True, "✅ Message added successfully"
+    except Exception as e:
+        return False, f"❌ Error: {str(e)}"
+
+
+def update_quick_message(msg_id: int, title: str, category: str, message: str) -> tuple[bool, str]:
+    """Update existing quick message."""
+    if not title.strip():
+        return False, "❌ Title is required"
+    if not message.strip():
+        return False, "❌ Message is required"
+    
+    try:
+        with Session(get_engine()) as session:
+            msg = session.get(QuickMessage, msg_id)
+            if not msg:
+                return False, "❌ Message not found"
+            
+            msg.title = title.strip()
+            msg.category = category
+            msg.message = message.strip()
+            msg.updated_at = datetime.now().strftime("%Y-%m-%d")
+            session.commit()
+            return True, "✅ Message updated successfully"
+    except Exception as e:
+        return False, f"❌ Error: {str(e)}"
+
+
+def delete_quick_message(msg_id: int) -> tuple[bool, str]:
+    """Delete quick message."""
+    try:
+        with Session(get_engine()) as session:
+            msg = session.get(QuickMessage, msg_id)
+            if not msg:
+                return False, "❌ Message not found"
+            
+            session.delete(msg)
+            session.commit()
+            return True, "✅ Message deleted successfully"
+    except Exception as e:
+        return False, f"❌ Error: {str(e)}"

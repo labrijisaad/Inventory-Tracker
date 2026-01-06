@@ -1,29 +1,10 @@
 """
-Business logic for sales calculations.
-Midad Books - كتب مداد
+Business Calculations
+Profit, revenue, and margin calculations
 """
 
-from typing import Optional
-
-
-def calculate_sale_profit(
-    qty: int,
-    total_paid: float,
-    packaging_per_book: float,
-    buy_price: float
-) -> dict:
-    """
-    Calculate profit for a single sale.
-    
-    Args:
-        qty: Quantity sold
-        total_paid: Total amount customer paid
-        packaging_per_book: Packaging cost per book
-        buy_price: What you paid for the book
-    
-    Returns:
-        Dictionary with all calculated values
-    """
+def calculate_sale_profit(qty: int, total_paid: float, packaging_per_book: float, buy_price: float) -> dict:
+    """Calculate profit for a single sale."""
     price_per_book = total_paid / qty if qty > 0 else 0
     total_packaging = packaging_per_book * qty
     revenue = total_paid - total_packaging
@@ -41,24 +22,9 @@ def calculate_sale_profit(
     }
 
 
-def calculate_bundle_profit(
-    quantities: list[int],
-    buy_prices: list[float],
-    total_paid: float,
-    packaging_per_book: float
-) -> dict:
-    """
-    Calculate profit for bundle sale.
-    
-    Args:
-        quantities: List of quantities for each book
-        buy_prices: List of buy prices for each book
-        total_paid: Total amount customer paid for bundle
-        packaging_per_book: Packaging cost per book
-    
-    Returns:
-        Dictionary with bundle calculations
-    """
+def calculate_bundle_profit(quantities: list[int], buy_prices: list[float], 
+                           total_paid: float, packaging_per_book: float) -> dict:
+    """Calculate profit for bundle sale."""
     total_books = sum(quantities)
     price_per_book = total_paid / total_books if total_books > 0 else 0
     total_packaging = packaging_per_book * total_books
@@ -80,16 +46,7 @@ def calculate_bundle_profit(
 
 
 def calculate_profit_for_sale(sale: dict, books: list[dict]) -> float:
-    """
-    Calculate profit for a sale record (used in history display).
-    
-    Args:
-        sale: Sale dictionary from database
-        books: List of all books
-    
-    Returns:
-        Profit amount
-    """
+    """Calculate profit for a sale record."""
     book = next((b for b in books if b["id"] == sale["book_id"]), None)
     if not book:
         return 0

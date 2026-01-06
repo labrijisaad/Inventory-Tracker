@@ -1,7 +1,7 @@
 """
 Midad Books - Source Package
+Core application package
 """
 
-from src import database
-
-__all__ = ['database']
+__version__ = "1.0.0"
+__author__ = "Midad Books Team"

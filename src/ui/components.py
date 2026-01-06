@@ -4,10 +4,9 @@ Beautiful, reusable interface elements
 كتب مداد - مكونات الواجهة
 """
 
+import streamlit as st
 import base64
 from pathlib import Path
-
-import streamlit as st
 
 
 def image_to_base64(image_path: str) -> str:
@@ -19,102 +18,71 @@ def image_to_base64(image_path: str) -> str:
         return ""
 
 
-def render_logo(logo_path: str = "assets/logo.png", width: int = 100):
-    """Render beautiful centered logo with dark mode neon glow."""
-    if Path(logo_path).exists():
-        logo_base64 = image_to_base64(logo_path)
-        st.sidebar.markdown(
-            f'''
-            <div style="text-align: center; padding: 25px 0 15px 0; margin-bottom: 10px;">
-                <div style="display: inline-block; padding: 18px; 
-                            background: linear-gradient(135deg, #8a6eff 0%, #5836b3 100%);
-                            border-radius: 50%; 
-                            box-shadow: 0 0 40px rgba(138, 110, 255, 0.8),
-                                        0 0 80px rgba(138, 110, 255, 0.4),
-                                        0 0 0 8px rgba(138, 110, 255, 0.2),
-                                        0 0 0 16px rgba(138, 110, 255, 0.1),
-                                        inset 0 0 20px rgba(255, 255, 255, 0.1);
-                            position: relative;
-                            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite;">
-                    <img src="data:image/png;base64,{logo_base64}" 
-                         alt="Midad Books" 
-                         width="{width}"
-                         style="border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.3); display: block;
-                                filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));">
-                </div>
-            </div>
-            <style>
-                @keyframes float {{
-                    0%, 100% {{ transform: translateY(0px); }}
-                    50% {{ transform: translateY(-12px); }}
-                }}
-                @keyframes glow {{
-                    0%, 100% {{ 
-                        box-shadow: 0 0 40px rgba(138, 110, 255, 0.8),
-                                    0 0 80px rgba(138, 110, 255, 0.4),
-                                    0 0 0 8px rgba(138, 110, 255, 0.2),
-                                    0 0 0 16px rgba(138, 110, 255, 0.1),
-                                    inset 0 0 20px rgba(255, 255, 255, 0.1);
-                    }}
-                    50% {{ 
-                        box-shadow: 0 0 60px rgba(138, 110, 255, 1),
-                                    0 0 120px rgba(138, 110, 255, 0.6),
-                                    0 0 0 8px rgba(138, 110, 255, 0.3),
-                                    0 0 0 16px rgba(138, 110, 255, 0.15),
-                                    inset 0 0 30px rgba(255, 255, 255, 0.2);
-                    }}
-                }}
-            </style>
-            ''',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.sidebar.markdown(
+def render_logo():
+    """Render logo from assets folder - SMALLER VERSION."""
+    # Path to logo
+    logo_path = Path(__file__).parent.parent.parent / "assets" / "logo.png"
+    
+    # Check if logo exists
+    if logo_path.exists():
+        # Center the logo with REDUCED animation and glow
+        st.markdown(
             """
-            <div style="text-align: center; padding: 25px 0 15px 0; margin-bottom: 10px;">
-                <div style="display: inline-block; width: 130px; height: 130px; 
-                            background: linear-gradient(135deg, #8a6eff 0%, #5836b3 100%);
-                            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                            box-shadow: 0 0 40px rgba(138, 110, 255, 0.8),
-                                        0 0 80px rgba(138, 110, 255, 0.4),
-                                        0 0 0 8px rgba(138, 110, 255, 0.2),
-                                        0 0 0 16px rgba(138, 110, 255, 0.1),
-                                        inset 0 0 20px rgba(255, 255, 255, 0.1);
-                            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite;">
-                    <span style="font-size: 65px; line-height: 1; 
-                                 filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));">📚</span>
-                </div>
-            </div>
             <style>
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-12px); }
-                }
-                @keyframes glow {
-                    0%, 100% { 
-                        box-shadow: 0 0 40px rgba(138, 110, 255, 0.8),
-                                    0 0 80px rgba(138, 110, 255, 0.4),
-                                    0 0 0 8px rgba(138, 110, 255, 0.2),
-                                    0 0 0 16px rgba(138, 110, 255, 0.1),
-                                    inset 0 0 20px rgba(255, 255, 255, 0.1);
-                    }
-                    50% { 
-                        box-shadow: 0 0 60px rgba(138, 110, 255, 1),
-                                    0 0 120px rgba(138, 110, 255, 0.6),
-                                    0 0 0 8px rgba(138, 110, 255, 0.3),
-                                    0 0 0 16px rgba(138, 110, 255, 0.15),
-                                    inset 0 0 30px rgba(255, 255, 255, 0.2);
-                    }
-                }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-10px); }
+            }
+            .logo-container {
+                animation: float 3s ease-in-out infinite;
+                text-align: center;
+                padding: 15px 0 8px 0;
+                max-width: 180px;
+                margin: 0 auto;
+            }
+            .logo-container img {
+                filter: drop-shadow(0 2px 6px rgba(138, 110, 255, 0.2));
+            }
             </style>
+            <div class="logo-container">
             """,
-            unsafe_allow_html=True,
+            unsafe_allow_html=True
+        )
+        
+        # Display logo image
+        st.image(
+            str(logo_path),
+            use_container_width=True
+        )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        # Fallback to text logo if image not found
+        st.warning(f"Logo not found at: {logo_path}")
+        st.markdown(
+            """
+            <div style="text-align: center; padding: 20px 0;">
+                <h1 style="
+                    font-size: 48px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    margin: 0;
+                    font-weight: 800;
+                    letter-spacing: 2px;
+                ">
+                    📚 MIDAD
+                </h1>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
 
 def render_title():
-    """Render elegant app title with neon effect."""
-    st.sidebar.markdown(
+    """Render elegant app title with REDUCED neon effect."""
+    st.markdown(
         """
         <div style="text-align: center; padding: 0 0 25px 0;">
             <h1 style="background: linear-gradient(135deg, #b8b8ff 0%, #8a6eff 100%);
@@ -123,18 +91,18 @@ def render_title():
                        background-clip: text;
                        margin: 0 0 8px 0; font-size: 32px; font-weight: 900; 
                        letter-spacing: -1px;
-                       filter: drop-shadow(0 0 10px rgba(138, 110, 255, 0.5));">
+                       filter: drop-shadow(0 0 4px rgba(138, 110, 255, 0.3));">
                 Midad Books
             </h1>
             <p style="color: #b8b8ff; font-size: 20px; margin: 0 0 12px 0; font-weight: 700; 
                       font-family: 'Arial', sans-serif; opacity: 0.9;
-                      text-shadow: 0 0 20px rgba(138, 110, 255, 0.5);">
+                      text-shadow: 0 0 8px rgba(138, 110, 255, 0.3);">
                 كتب مداد
             </p>
             <div style="width: 80px; height: 4px; 
                         background: linear-gradient(90deg, #8a6eff 0%, #5836b3 100%); 
                         margin: 15px auto; border-radius: 3px;
-                        box-shadow: 0 0 20px rgba(138, 110, 255, 0.8);"></div>
+                        box-shadow: 0 0 10px rgba(138, 110, 255, 0.4);"></div>
             <p style="color: #9e9e9e; font-size: 10px; margin: 12px 0 0 0; text-transform: uppercase; 
                       letter-spacing: 2px; font-weight: 700;">
                 Arabic Literature
@@ -145,14 +113,115 @@ def render_title():
     )
 
 
+def render_custom_navigation():
+    """Render custom navigation using Streamlit's native page_link - NO BULLET POINT."""
+    st.markdown(
+        """
+        <h3 style="color: #495057; font-size: 14px; font-weight: 600; margin: 20px 0 12px 0; 
+                   text-transform: uppercase; letter-spacing: 0.5px;">
+            🧭 Navigation
+        </h3>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Define pages with their actual file paths
+    pages = [
+        {"name": "Home", "icon": "🏠", "page": "app.py"},
+        {"name": "Inventory", "icon": "📚", "page": "pages/01_inventory.py"},
+        {"name": "Sales", "icon": "💰", "page": "pages/02_sales.py"},
+        {"name": "Analytics", "icon": "📊", "page": "pages/03_analytics.py"},
+        {"name": "Messages", "icon": "💬", "page": "pages/04_messages.py"},
+    ]
+    
+    current_page = st.session_state.get('current_page', 'Home')
+    
+    # Custom CSS for navigation buttons
+    st.markdown(
+        """
+        <style>
+        /* Hide default page link styling */
+        .stPageLink {
+            margin-bottom: 8px;
+        }
+        
+        .stPageLink > a {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #495057;
+            width: 100%;
+            display: block;
+            text-decoration: none;
+        }
+        
+        .stPageLink > a:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            transform: translateX(3px);
+        }
+        
+        /* Active page styling */
+        .nav-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border-color: #667eea !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transform: translateX(5px);
+            font-weight: 700 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    for page in pages:
+        is_active = current_page == page['name']
+        
+        if is_active:
+            # Active page - show styled div WITHOUT bullet point
+            st.markdown(
+                f"""
+                <div style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    border: 2px solid #667eea;
+                    font-weight: 700;
+                    font-size: 14px;
+                    margin-bottom: 8px;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+                    transform: translateX(5px);
+                ">
+                    {page['icon']} {page['name']}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        else:
+            # Inactive page - use page_link
+            st.page_link(
+                page['page'],
+                label=f"{page['icon']} {page['name']}",
+                use_container_width=True
+            )
+    
+    st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
+
+
 def render_stats_card(stats: dict):
-    """Render premium dark mode stats cards with neon glow."""
-    st.sidebar.markdown(
+    """Render premium dark mode stats cards with REDUCED neon glow."""
+    st.markdown(
         """
         <div style="margin-bottom: 20px;">
             <h3 style="color: #b8b8ff; font-size: 12px; font-weight: 800; margin: 0 0 16px 0; 
                        text-transform: uppercase; letter-spacing: 1.5px; padding-left: 2px;
-                       text-shadow: 0 0 10px rgba(138, 110, 255, 0.5);">
+                       text-shadow: 0 0 4px rgba(138, 110, 255, 0.3);">
                 📊 Quick Stats
             </h3>
         </div>
@@ -160,15 +229,15 @@ def render_stats_card(stats: dict):
         unsafe_allow_html=True
     )
     
-    # Row 1 - Books with dark neon effect
-    col1, col2 = st.sidebar.columns(2)
+    # Row 1 - Books with REDUCED dark neon effect
+    col1, col2 = st.columns(2)
     with col1:
         st.markdown(
             f"""
             <div style="background: linear-gradient(135deg, #8a6eff 0%, #5836b3 100%); 
                         padding: 18px 12px; border-radius: 16px; text-align: center;
-                        box-shadow: 0 8px 32px rgba(138, 110, 255, 0.5),
-                                    0 0 40px rgba(138, 110, 255, 0.3),
+                        box-shadow: 0 4px 16px rgba(138, 110, 255, 0.3),
+                                    0 0 20px rgba(138, 110, 255, 0.15),
                                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                         transition: all 0.3s ease;
                         cursor: pointer;
@@ -182,7 +251,7 @@ def render_stats_card(stats: dict):
                     📚 ACTIVE
                 </div>
                 <div style="color: white; font-size: 32px; font-weight: 900; line-height: 1; position: relative;
-                            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);">
+                            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     {stats['active_count']}
                 </div>
             </div>
@@ -195,8 +264,8 @@ def render_stats_card(stats: dict):
             f"""
             <div style="background: linear-gradient(135deg, #f093fb 0%, #c93f9e 100%); 
                         padding: 18px 12px; border-radius: 16px; text-align: center;
-                        box-shadow: 0 8px 32px rgba(240, 147, 251, 0.5),
-                                    0 0 40px rgba(240, 147, 251, 0.3),
+                        box-shadow: 0 4px 16px rgba(240, 147, 251, 0.3),
+                                    0 0 20px rgba(240, 147, 251, 0.15),
                                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                         position: relative; overflow: hidden;
                         border: 1px solid rgba(255, 255, 255, 0.1);">
@@ -207,7 +276,7 @@ def render_stats_card(stats: dict):
                     ✅ SOLD
                 </div>
                 <div style="color: white; font-size: 32px; font-weight: 900; line-height: 1; position: relative;
-                            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);">
+                            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     {stats['sold_count']}
                 </div>
             </div>
@@ -215,17 +284,17 @@ def render_stats_card(stats: dict):
             unsafe_allow_html=True,
         )
     
-    st.sidebar.markdown("<div style='margin: 14px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 14px 0;'></div>", unsafe_allow_html=True)
     
     # Row 2 - Financial
-    col1, col2 = st.sidebar.columns(2)
+    col1, col2 = st.columns(2)
     with col1:
         st.markdown(
             f"""
             <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
                         padding: 18px 12px; border-radius: 16px; text-align: center;
-                        box-shadow: 0 8px 32px rgba(79, 172, 254, 0.5),
-                                    0 0 40px rgba(79, 172, 254, 0.3),
+                        box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3),
+                                    0 0 20px rgba(79, 172, 254, 0.15),
                                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                         position: relative; overflow: hidden;
                         border: 1px solid rgba(255, 255, 255, 0.1);">
@@ -236,7 +305,7 @@ def render_stats_card(stats: dict):
                     💰 REVENUE
                 </div>
                 <div style="color: white; font-size: 20px; font-weight: 900; line-height: 1; position: relative;
-                            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);">
+                            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     €{stats['revenue']:.0f}
                 </div>
             </div>
@@ -249,8 +318,8 @@ def render_stats_card(stats: dict):
             f"""
             <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); 
                         padding: 18px 12px; border-radius: 16px; text-align: center;
-                        box-shadow: 0 8px 32px rgba(67, 233, 123, 0.5),
-                                    0 0 40px rgba(67, 233, 123, 0.3),
+                        box-shadow: 0 4px 16px rgba(67, 233, 123, 0.3),
+                                    0 0 20px rgba(67, 233, 123, 0.15),
                                     inset 0 1px 0 rgba(255, 255, 255, 0.1);
                         position: relative; overflow: hidden;
                         border: 1px solid rgba(255, 255, 255, 0.1);">
@@ -261,7 +330,7 @@ def render_stats_card(stats: dict):
                     📈 PROFIT
                 </div>
                 <div style="color: white; font-size: 20px; font-weight: 900; line-height: 1; position: relative;
-                            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);">
+                            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     €{stats['profit']:.0f}
                 </div>
             </div>
@@ -269,8 +338,8 @@ def render_stats_card(stats: dict):
             unsafe_allow_html=True,
         )
     
-    # Stock summary with dark glassmorphism
-    st.sidebar.markdown(
+    # Stock summary with REDUCED dark glassmorphism glow
+    st.markdown(
         f"""
         <div style="text-align: center; margin-top: 16px; padding: 14px; 
                     background: rgba(138, 110, 255, 0.1); 
@@ -278,14 +347,14 @@ def render_stats_card(stats: dict):
                     border-radius: 12px; 
                     border: 2px solid rgba(138, 110, 255, 0.3);
                     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-                                0 0 40px rgba(138, 110, 255, 0.2);">
+                                0 0 20px rgba(138, 110, 255, 0.1);">
             <p style="margin: 0; color: #b8b8ff; font-size: 11px; font-weight: 700;">
                 📦 Total Stock: <strong style="background: linear-gradient(135deg, #b8b8ff 0%, #8a6eff 100%);
                                                -webkit-background-clip: text;
                                                -webkit-text-fill-color: transparent;
                                                background-clip: text;
                                                font-size: 16px; font-weight: 900;
-                                               filter: drop-shadow(0 0 10px rgba(138, 110, 255, 0.8));">{stats['total_stock']}</strong> books
+                                               filter: drop-shadow(0 0 4px rgba(138, 110, 255, 0.4));">{stats['total_stock']}</strong> books
             </p>
         </div>
         """,
@@ -294,7 +363,7 @@ def render_stats_card(stats: dict):
 
 
 def render_page_header(title: str, subtitle: str, icon: str = "📚"):
-    """Render beautiful dark mode page header with neon gradient."""
+    """Render beautiful dark mode page header with REDUCED neon gradient."""
     st.markdown(
         f"""
         <div style="background: linear-gradient(135deg, 
@@ -303,11 +372,11 @@ def render_page_header(title: str, subtitle: str, icon: str = "📚"):
                     backdrop-filter: blur(20px);
                     padding: 35px 30px; border-radius: 16px; margin-bottom: 30px;
                     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
-                                0 0 60px rgba(138, 110, 255, 0.3);
+                                0 0 30px rgba(138, 110, 255, 0.15);
                     border: 1px solid rgba(138, 110, 255, 0.3);">
             <h1 style="color: #f0f0f0; margin: 0; font-size: 36px; font-weight: 900; 
                        letter-spacing: -0.5px;
-                       text-shadow: 0 0 30px rgba(138, 110, 255, 0.8);">{icon} {title}</h1>
+                       text-shadow: 0 0 15px rgba(138, 110, 255, 0.4);">{icon} {title}</h1>
             <p style="color: #e0e0e0; margin: 12px 0 0 0; font-size: 16px; 
                       font-weight: 400; line-height: 1.5; opacity: 0.9;">{subtitle}</p>
         </div>
@@ -318,9 +387,9 @@ def render_page_header(title: str, subtitle: str, icon: str = "📚"):
 
 def render_alerts(low_stock: list, recent_sales: list, week_range: str):
     """Render alerts section with better design."""
-    st.sidebar.markdown("<div style='margin: 20px 0 15px 0;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin: 20px 0 15px 0;'></div>", unsafe_allow_html=True)
     
-    st.sidebar.markdown(
+    st.markdown(
         """
         <h3 style="color: #495057; font-size: 14px; font-weight: 600; margin: 0 0 10px 0; 
                    text-transform: uppercase; letter-spacing: 0.5px;">
@@ -331,7 +400,7 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
     )
     
     if low_stock:
-        st.sidebar.markdown(
+        st.markdown(
             f"""
             <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%); 
                         padding: 10px 12px; border-radius: 6px; 
@@ -344,11 +413,29 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
             """,
             unsafe_allow_html=True,
         )
-        with st.sidebar.expander("📉 View Details", expanded=False):
+        with st.expander("📉 View Details", expanded=False):
             for book in low_stock[:5]:
-                st.caption(f"• **{book['title'][:22]}{'...' if len(book['title']) > 22 else ''}** — {book['stock']} left")
+                st.markdown(
+                    f"""
+                    <div style="
+                        background: rgba(255, 255, 255, 0.5);
+                        border-left: 3px solid #ffc107;
+                        padding: 8px 10px;
+                        margin-bottom: 8px;
+                        border-radius: 6px;
+                    ">
+                        <div style="color: #495057; font-weight: 600; font-size: 13px; margin-bottom: 3px;">
+                            📖 {book['title'][:40]}
+                        </div>
+                        <div style="color: #6c757d; font-size: 11px;">
+                            📦 {book['stock']} left • By {book['author'][:30]}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
     else:
-        st.sidebar.markdown(
+        st.markdown(
             """
             <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
                         padding: 10px 12px; border-radius: 6px; 
@@ -363,7 +450,7 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
         )
     
     if recent_sales:
-        st.sidebar.markdown(
+        st.markdown(
             f"""
             <div style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); 
                         padding: 10px 12px; border-radius: 6px; 
@@ -383,8 +470,8 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
 
 def render_footer():
     """Render simple footer."""
-    st.sidebar.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    st.sidebar.markdown(
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown(
         """
         <div style="text-align: center; color: #adb5bd; font-size: 10px; padding-top: 15px; 
                     border-top: 1px solid #e9ecef;">
@@ -394,7 +481,6 @@ def render_footer():
         """,
         unsafe_allow_html=True,
     )
-
 
 
 def render_info_banner(message: str, type: str = "info"):
@@ -454,40 +540,6 @@ def load_custom_css():
         
         [data-testid="stSidebar"] > div:first-child {
             padding-top: 1rem;
-        }
-        
-        /* Better radio buttons (navigation) */
-        .stRadio > div {
-            gap: 8px;
-        }
-        
-        .stRadio > div > label {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 2px solid #e9ecef;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            color: #495057;
-            width: 100%;
-            display: block;
-        }
-        
-        .stRadio > div > label:hover {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            transform: translateX(3px);
-        }
-        
-        .stRadio > div > label[data-baseweb="radio"] > div:first-child {
-            display: none;
-        }
-        
-        /* Selected radio button */
-        .stRadio > div > label > div[data-testid="stMarkdownContainer"] > p {
-            font-size: 14px;
-            margin: 0;
         }
         
         /* Better buttons with gradient */
