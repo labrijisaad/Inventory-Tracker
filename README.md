@@ -1,20 +1,41 @@
-# :shopping: Inventory tracker
+# 📚 Midad Books | كتب مداد
 
-A Streamlit app showing how to use `st.data_editor` to read and modify a database. Behind the scenes
-this uses a simple SQLite database, but you can easily replace it with whatever your favorite DB is.
+Simple inventory & sales management for Arabic bookshops.  
+Built with **Streamlit + SQLModel + SQLite**.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://inventory-tracker-template.streamlit.app/)
+## ✨ Features
 
-### How to run it on your own machine
+- **📚 Inventory** - Add/edit books, track stock & prices
+- **💰 Sales** - Record sales → stock auto-decreases (transactional)
+- **📊 Analytics** - Revenue, profit, stock value
 
-1. Install the requirements
+## 🚀 Quick Start
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+```bash
+uv run streamlit run app.py
+```
 
-2. Run the app
+Open `http://localhost:8501`
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+## 📁 Structure
+
+```
+├── app.py              # Streamlit UI
+├── src/
+│   └── database.py     # SQLModel models + operations
+├── data/
+│   └── midad.db        # SQLite database (auto-created)
+├── pyproject.toml      # UV dependencies
+└── uv.lock
+```
+
+## 🛠️ Tech Stack
+
+- **UV** - Fast Python package manager
+- **Streamlit** - Web UI
+- **SQLModel** - Type-safe ORM (Pydantic + SQLAlchemy)
+- **SQLite** - Embedded database
+
+---
+
+*Made with ❤️ for Midad Books | صُنع بحب لكتب مداد*
