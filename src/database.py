@@ -270,10 +270,11 @@ def add_sale(
     total_paid: float, 
     packaging_per_book: float,
     customer: str, 
-    platform: str
+    platform: str,
+    sale_date: Optional[str] = None  # NEW: Allow custom date
 ) -> tuple[bool, str]:
     """
-    Record sale with packaging costs.
+    Record sale with packaging costs and custom date.
     
     Args:
         book_id: Book to sell
@@ -282,11 +283,12 @@ def add_sale(
         packaging_per_book: Packaging cost per book
         customer: Customer name
         platform: Vinted or Instagram
+        sale_date: Optional date string (YYYY-MM-DD HH:MM), defaults to now
     
     Returns:
         (success, message)
     """
-    print(f"\n🔥 add_sale(book_id={book_id}, qty={qty}, total_paid={total_paid}, packaging={packaging_per_book}, customer={customer}, platform={platform})")
+    print(f"\n🔥 add_sale(book_id={book_id}, qty={qty}, total_paid={total_paid}, packaging={packaging_per_book}, customer={customer}, platform={platform}, date={sale_date})")
     
     # Validations
     if qty < 1:
@@ -341,6 +343,14 @@ def add_sale(
             if profit < 0:
                 print(f"      ⚠️ WARNING: Selling at a LOSS!")
             
+            # Use custom date or default to now
+            if sale_date:
+                date_str = sale_date
+                print(f"   📅 Using custom date: {date_str}")
+            else:
+                date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+                print(f"   📅 Using current date: {date_str}")
+            
             # Create sale record
             print(f"   💾 Creating sale record...")
             sale = Sale(
@@ -351,6 +361,7 @@ def add_sale(
                 total=total_paid,
                 customer=customer.strip(),
                 platform=platform,
+                date=date_str  # Use custom or current date
             )
             session.add(sale)
             print(f"   ✅ Sale record created")
