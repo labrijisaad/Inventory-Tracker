@@ -3,13 +3,14 @@ Midad Books - Database with Customer Support
 """
 
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 import uuid
 
 import pandas as pd
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
+
+from src.config import PLATFORMS, GENRES  # Import from config
 
 # Database path
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -19,34 +20,21 @@ print(f"📂 Database path: {DB_PATH}")
 
 
 # ============================================================================
-# ENUMS
+# REMOVED ENUMS - Now using config lists
 # ============================================================================
-class Platform(str, Enum):
-    VINTED = "Vinted"
-    INSTAGRAM = "Instagram"
-
-
-class Genre(str, Enum):
-    FICTION = "Fiction"
-    SELF_HELP = "Self-Help"
-    CLASSIC = "Classic"
-    HORROR = "Horror"
-    ROMANCE = "Romance"
-    PHILOSOPHY = "Philosophy"
-    RELIGION = "Religion"
-    CHILDREN = "Children"
-    OTHER = "Other"
+# class Platform(str, Enum):  # REMOVED
+# class Genre(str, Enum):     # REMOVED
 
 
 # ============================================================================
 # MODELS
 # ============================================================================
 class Customer(SQLModel, table=True):
-    """Customer database with Vinted username as ID."""
+    """Customer database with username as ID."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    vinted_username: str = Field(index=True, unique=True)
+    vinted_username: str = Field(index=True, unique=True)  # Can be any platform username
     name: str
-    platform_preference: str = Field(default=Platform.VINTED.value)
+    platform_preference: str = Field(default="Vinted")
     notes: str = ""
     created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     
@@ -59,7 +47,7 @@ class Book(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
     author: str = ""
-    genre: str = Field(default=Genre.OTHER.value)
+    genre: str = Field(default="Other")  # Now uses string from config
     buy_price: float = Field(default=0, ge=0)
     target_price: float = Field(default=0, ge=0)
     stock: int = Field(default=1, ge=0)
@@ -81,12 +69,12 @@ class Book(SQLModel, table=True):
 class Sale(SQLModel, table=True):
     """Sale record - supports bundles via bundle_id."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M"))
+    date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))  # Date only
     qty: int = Field(default=1, ge=1)
     price: float = Field(ge=0)
     packaging_per_book: float = Field(default=0, ge=0)
     total: float = Field(ge=0)
-    platform: str = Field(default=Platform.VINTED.value)
+    platform: str = Field(default="Vinted")  # Now uses string from config
     
     # Bundle support
     bundle_id: Optional[str] = Field(default=None, index=True)
@@ -97,6 +85,12 @@ class Sale(SQLModel, table=True):
     
     customer_id: int = Field(foreign_key="customer.id")  # REQUIRED
     customer_rel: Customer = Relationship(back_populates="sales")
+
+
+# ============================================================================
+# Rest of database.py stays the same...
+# (Keep all other functions as they are)
+# ============================================================================
 
 
 # ============================================================================

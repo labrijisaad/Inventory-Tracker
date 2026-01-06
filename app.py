@@ -1,5 +1,5 @@
 """
-Midad Books - Enhanced Analytics
+Midad Books - Enhanced Analytics with Beautiful UI
 📚 كتب مداد
 """
 
@@ -11,8 +11,6 @@ import streamlit as st
 from typing import Optional
 
 from src.database import (
-    Genre,
-    Platform,
     add_sale,
     add_bundle_sale,
     delete_sale,
@@ -31,15 +29,33 @@ from src.config import (
     LOW_MARGIN_THRESHOLD,
     HIGH_MARGIN_THRESHOLD,
     DISPLAY_DATE_FORMAT,
+    PLATFORMS,
+    GENRES,
+    QUICK_MESSAGES,
+)
+
+from src.ui_components import (
+    render_logo,
+    render_title,
+    render_stats_card,
+    render_alerts,
+    render_footer,
+    render_page_header,
+    render_info_banner,
+    render_section_header,
+    load_custom_css,
 )
 
 # Config
 st.set_page_config(
-    page_title="Midad Books",
+    page_title="Midad Books - كتب مداد",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Load custom CSS
+load_custom_css()
 
 # Init database
 init_db()
@@ -76,7 +92,7 @@ def get_sales_by_date_range(days: int = 7) -> list[dict]:
     recent = []
     for s in sales:
         try:
-            sale_date = datetime.strptime(s["date"], "%Y-%m-%d %H:%M")
+            sale_date = datetime.strptime(s["date"], "%Y-%m-%d")
             if sale_date >= cutoff:
                 recent.append(s)
         except:
@@ -105,8 +121,8 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
             book_list = [f"{s['qty']}x {s['book_title']}" for s in bundle_sales]
             
             grouped.append({
-                'id': f"B-{sale['bundle_id'][:6]}",  # ✅ String ID for bundles
-                'original_id': sale['id'],  # Keep original for deletion
+                'id': f"B-{sale['bundle_id'][:6]}",
+                'original_id': sale['id'],
                 'date': sale['date'],
                 'type': 'bundle',
                 'book_title': f"📦 Bundle ({len(bundle_sales)} books)",
@@ -127,7 +143,7 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
             profit = calculate_profit_for_sale(sale, all_books)
             
             grouped.append({
-                'id': str(sale['id']),  # ✅ Convert to string for consistency
+                'id': str(sale['id']),
                 'original_id': sale['id'],
                 'date': sale['date'],
                 'type': 'single',
@@ -146,65 +162,64 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
 
 
 # ============================================================================
-# SIDEBAR
+# BEAUTIFUL SIDEBAR
 # ============================================================================
 with st.sidebar:
-    st.title("📚 Midad Books")
-    st.caption("كتب مداد")
-    st.divider()
+    # Logo
+    render_logo()
     
+    # Title
+    render_title()
+    
+    # Navigation
+    st.markdown("### 🧭 Navigation")
     page = st.radio(
-        "Navigate",
-        ["📚 Inventory", "💰 Sales", "📊 Analytics"],
+        "Select Page",
+        ["📚 Inventory", "💰 Sales", "📊 Analytics", "💬 Quick Messages"],
         label_visibility="collapsed"
     )
     
-    st.divider()
+    st.markdown("---")
     
     # Quick stats
     stats = get_stats()
+    render_stats_card(stats)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("📚 Active", stats["active_count"])
-        st.metric("💰 Revenue", f"€{stats['revenue']:.0f}")
-    with col2:
-        st.metric("✅ Sold", stats["sold_count"])
-        st.metric("📈 Profit", f"€{stats['profit']:.0f}")
-    
-    st.caption(f"📦 Stock: {stats['total_stock']} books")
-    
-    # Low stock warnings
+    # Alerts
     low_stock = get_low_stock_books()
-    if low_stock:
-        st.divider()
-        st.warning(f"⚠️ {len(low_stock)} book(s) low stock!")
-        with st.expander("View Low Stock"):
-            for book in low_stock[:3]:
-                st.caption(f"📕 {book['title'][:20]} - Stock: {book['stock']}")
-    
-    # Recent activity
     recent_sales = get_sales_by_date_range(7)
-    if recent_sales:
-        st.divider()
-        st.success(f"🔥 {len(recent_sales)} sales this week!")
+    
+    # Calculate week range
+    today = datetime.now()
+    week_start = today - timedelta(days=7)
+    week_range = f"{week_start.strftime('%d/%m')} - {today.strftime('%d/%m/%Y')}"
+    
+    render_alerts(low_stock, recent_sales, week_range)
+    
+    # Footer
+    render_footer()
 
 
 # ============================================================================
 # INVENTORY PAGE
 # ============================================================================
 if page == "📚 Inventory":
-    st.header("📚 Inventory Management")
+    render_page_header(
+        "Inventory Management",
+        "Manage your book collection - Track stock, prices, and sales history"
+    )
     
+    render_info_banner(
+        "💡 Books with stock = 0 automatically move to 'Sold' tab",
+        type="info"
+    )
+    
+    # Only show Total Stock metric
     col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        st.caption("💡 Stock = 0 → automatically moves to 'Sold' tab")
     with col2:
-        st.metric("Total Stock", stats["total_stock"], label_visibility="collapsed")
-    with col3:
-        st.metric("Stock Value", f"€{stats['stock_value']:.0f}", label_visibility="collapsed")
+        st.metric("📦 Total Stock", stats["total_stock"])
     
-    st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     
     tab1, tab2, tab3 = st.tabs([
         f"🟢 Active ({stats['active_count']})", 
@@ -220,7 +235,10 @@ if page == "📚 Inventory":
         if books and status_filter == "active":
             books_without_targets = [b for b in books if b['target_price'] == 0]
             if books_without_targets:
-                st.warning(f"⚠️ {len(books_without_targets)} book(s) have no target price set")
+                render_info_banner(
+                    f"⚠️ {len(books_without_targets)} book(s) have no target price set",
+                    type="warning"
+                )
 
         if not books:
             st.info(f"No books found" + (f" with filter '{status_filter}'" if status_filter else ""))
@@ -247,35 +265,33 @@ if page == "📚 Inventory":
             st.success(f"📊 Showing {len(books)} book(s)")
             df = pd.DataFrame(books)
         
-        # ✅ Configure columns based on tab
+        # Configure columns based on tab
         if status_filter == "active":
-            # Active: Hide ID and Status
             column_config = {
-                "id": None,  # ✅ Hidden
+                "id": None,
                 "title": st.column_config.TextColumn("📖 Title", width="large", required=True),
                 "author": st.column_config.TextColumn("✍️ Author", width="medium"),
-                "genre": st.column_config.SelectboxColumn("📂 Genre", options=[g.value for g in Genre], width="small"),
+                "genre": st.column_config.SelectboxColumn("📂 Genre", options=GENRES, width="small"),
                 "buy_price": st.column_config.NumberColumn("💵 Buy €", format="%.2f", min_value=0, width="small"),
                 "target_price": st.column_config.NumberColumn("🎯 Target €", format="%.2f", min_value=0, width="small"),
                 "_stock_icon": st.column_config.TextColumn("", width="small"),
                 "stock": st.column_config.NumberColumn("📦 Stock", min_value=0, step=1, width="small"),
-                "status": None,  # ✅ Hidden
+                "status": None,
                 "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
                 "created_at": None,
             }
             column_order = ["title", "author", "genre", "buy_price", "target_price", "_stock_icon", "stock", "notes"]
             
         elif status_filter == "sold":
-            # Sold: Hide ID and Status (everything is sold anyway)
             column_config = {
-                "id": None,  # ✅ Hidden
+                "id": None,
                 "title": st.column_config.TextColumn("📖 Title", width="large"),
                 "author": st.column_config.TextColumn("✍️ Author", width="medium"),
                 "genre": st.column_config.TextColumn("📂 Genre", width="small"),
                 "buy_price": st.column_config.NumberColumn("💵 Buy €", format="%.2f", width="small"),
                 "target_price": st.column_config.NumberColumn("🎯 Target €", format="%.2f", width="small"),
-                "stock": None,  # Always 0, no need to show
-                "status": None,  # ✅ Hidden (everything is sold)
+                "stock": None,
+                "status": None,
                 "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
                 "created_at": None,
                 "_stock_icon": None,
@@ -283,12 +299,11 @@ if page == "📚 Inventory":
             column_order = ["title", "author", "genre", "buy_price", "target_price", "notes"]
             
         else:
-            # All: Show everything including ID and Status
             column_config = {
                 "id": st.column_config.NumberColumn("🆔 ID", disabled=True, width="small"),
                 "title": st.column_config.TextColumn("📖 Title", width="large", required=True),
                 "author": st.column_config.TextColumn("✍️ Author", width="medium"),
-                "genre": st.column_config.SelectboxColumn("📂 Genre", options=[g.value for g in Genre], width="small"),
+                "genre": st.column_config.SelectboxColumn("📂 Genre", options=GENRES, width="small"),
                 "buy_price": st.column_config.NumberColumn("💵 Buy €", format="%.2f", min_value=0, width="small"),
                 "target_price": st.column_config.NumberColumn("🎯 Target €", format="%.2f", min_value=0, width="small"),
                 "_stock_icon": st.column_config.TextColumn("", width="small"),
@@ -314,7 +329,7 @@ if page == "📚 Inventory":
         col1, col2 = st.columns([3, 1])
         
         with col1:
-            if st.button("💾 Save Changes", type="primary", key=f"save_{tab_key}", width='stretch'):
+            if st.button("💾 Save Changes", type="primary", key=f"save_{tab_key}", use_container_width=True):
                 with st.spinner("Saving changes..."):
                     success, msg = save_books_bulk(edited.to_dict('records'), status_filter)
                     if success:
@@ -328,7 +343,7 @@ if page == "📚 Inventory":
                         st.error(f"❌ {msg}")
         
         with col2:
-            if st.button("🔄 Refresh", key=f"refresh_{tab_key}", width='stretch'):
+            if st.button("🔄 Refresh", key=f"refresh_{tab_key}", use_container_width=True):
                 show_success_toast("Refreshed!")
                 st.session_state.refresh_key += 1
                 st.rerun()
@@ -353,14 +368,19 @@ if page == "📚 Inventory":
 # SALES PAGE
 # ============================================================================
 elif page == "💰 Sales":
-    st.header("💰 Record New Sale")
+    render_page_header(
+        "Record New Sale",
+        "Track single sales or create bundle transactions"
+    )
     
     active_books = get_books("active")
     available_books = [b for b in active_books if b["stock"] > 0]
     
     if not available_books:
-        st.warning("⚠️ No books available for sale!")
-        st.info("👉 Go to **Inventory** tab to add books")
+        render_info_banner(
+            "⚠️ No books available for sale! Go to Inventory tab to add books.",
+            type="warning"
+        )
     else:
         sale_tab1, sale_tab2 = st.tabs(["📖 Single Sale", "🎁 Bundle Sale"])
         
@@ -369,7 +389,7 @@ elif page == "💰 Sales":
             col1, col2 = st.columns([1, 2])
             
             with col1:
-                st.subheader("📝 Sale Details")
+                render_section_header("Sale Details", "📝")
                 
                 book_options = {f"{b['title']}": b for b in available_books}
                 selected_title = st.selectbox(
@@ -394,18 +414,14 @@ elif page == "💰 Sales":
                 
                 st.divider()
                 
-                col_date, col_time = st.columns([2, 1])
-                with col_date:
-                    sale_date = st.date_input("📅 Date", value=datetime.now(), key="sale_date")
-                with col_time:
-                    sale_time = st.time_input("🕐 Time", value=datetime.now().time(), key="sale_time")
-                
-                sale_datetime_str = f"{sale_date.strftime('%Y-%m-%d')} {sale_time.strftime('%H:%M')}"
-                st.caption(f"📅 {sale_datetime_str}")
+                # Date only (no time)
+                sale_date = st.date_input("📅 Date", value=datetime.now(), key="sale_date")
+                sale_datetime_str = sale_date.strftime('%Y-%m-%d')
+                st.caption(f"📅 {sale_date.strftime('%d/%m/%Y')}")
                 
                 st.divider()
                 
-                platform = st.selectbox("🛒 Platform", [p.value for p in Platform], key="platform")
+                platform = st.selectbox("🛒 Platform", PLATFORMS, key="platform")
                 
                 qty = st.number_input(
                     "📦 Quantity", 
@@ -424,21 +440,24 @@ elif page == "💰 Sales":
                     key="total_paid"
                 )
                 
-                packaging_per_book = st.number_input(
-                    "📦 Packaging/Book (€)", 
+                # Total packaging
+                total_packaging = st.number_input(
+                    "📦 Packaging Total (€)", 
                     min_value=0.0, 
-                    value=DEFAULT_PACKAGING_COST,
+                    value=DEFAULT_PACKAGING_COST * qty,
                     step=0.10,
-                    key="packaging"
+                    key="packaging_total"
                 )
                 
+                packaging_per_book = total_packaging / qty if qty > 0 else 0
+                
                 customer_name = st.text_input("👤 Customer Name", placeholder="e.g., Ahmed M.", key="customer_name")
-                customer_username = st.text_input("@️ Vinted Username", placeholder="e.g., ahmed_m", key="customer_username")
+                customer_username = st.text_input("@️ Username", placeholder="e.g., ahmed_m", key="customer_username")
                 
                 calc = calculate_sale_profit(qty, total_paid, packaging_per_book, selected_book["buy_price"])
                 
                 st.divider()
-                st.markdown("### 📊 Live Summary")
+                render_section_header("Live Summary", "📊")
                 
                 col_a, col_b = st.columns(2)
                 with col_a:
@@ -463,7 +482,7 @@ elif page == "💰 Sales":
                 
                 st.divider()
                 
-                if st.button("✅ Record Sale", type="primary", width='stretch', key="submit_sale"):
+                if st.button("✅ Record Sale", type="primary", use_container_width=True, key="submit_sale"):
                     if not customer_name.strip() or not customer_username.strip():
                         show_error_toast("Customer info required")
                         st.error("❌ Please enter customer name and username")
@@ -491,14 +510,14 @@ elif page == "💰 Sales":
                                 st.error(f"❌ {msg}")
             
             with col2:
-                st.subheader("📋 Recent Sales")
+                render_section_header("Recent Sales", "📋")
                 
                 sales = get_sales()
                 
                 if sales:
                     date_filter = st.selectbox(
                         "📅 Show:",
-                        ["All Time", "Last 7 Days", "Last 30 Days", "Today"],
+                        ["All Time", "Last 7 Days", "Last 30 Days"],
                         key="date_filter_single"
                     )
                     
@@ -506,9 +525,6 @@ elif page == "💰 Sales":
                         sales = get_sales_by_date_range(7)
                     elif date_filter == "Last 30 Days":
                         sales = get_sales_by_date_range(30)
-                    elif date_filter == "Today":
-                        today = datetime.now().strftime("%Y-%m-%d")
-                        sales = [s for s in sales if s["date"].startswith(today)]
                     
                     if not sales:
                         st.info(f"No sales for: {date_filter}")
@@ -520,7 +536,7 @@ elif page == "💰 Sales":
                             profit_icon = "💚" if s['profit'] >= 0 else "💔"
                             
                             try:
-                                date_obj = datetime.strptime(s["date"], "%Y-%m-%d %H:%M")
+                                date_obj = datetime.strptime(s["date"], "%Y-%m-%d")
                                 date_display = date_obj.strftime(DISPLAY_DATE_FORMAT)
                             except:
                                 date_display = s["date"]
@@ -566,12 +582,8 @@ elif page == "💰 Sales":
                         
                         if st.button("🗑️ Delete", type="secondary", key="delete_sale_btn"):
                             if sale_id_input:
-                                # ✅ Check if it's a Bundle ID
                                 if sale_id_input.startswith("B-"):
-                                    # Extract bundle hash from display ID
                                     bundle_hash = sale_id_input.split("B-")[1]
-                                    
-                                    # Find any sale with this bundle hash
                                     all_sales = get_sales()
                                     matching_sale = None
                                     for s in all_sales:
@@ -594,7 +606,6 @@ elif page == "💰 Sales":
                                     else:
                                         st.error("❌ Bundle ID not found")
                                 else:
-                                    # Regular sale ID
                                     try:
                                         sale_id = int(sale_id_input)
                                         with st.spinner("Deleting..."):
@@ -615,7 +626,7 @@ elif page == "💰 Sales":
         
         # BUNDLE SALE TAB
         with sale_tab2:
-            st.subheader("🎁 Create Bundle Sale")
+            render_section_header("Create Bundle Sale", "🎁")
             st.caption("Sell multiple books in one transaction")
             
             selected_books = st.multiselect(
@@ -630,7 +641,7 @@ elif page == "💰 Sales":
                 
                 st.divider()
                 
-                st.markdown("### 📦 Quantities")
+                render_section_header("Quantities", "📦")
                 quantities = []
                 for book in selected_book_objs:
                     qty = st.number_input(
@@ -650,7 +661,7 @@ elif page == "💰 Sales":
                     for book, qty in zip(selected_book_objs, quantities)
                 )
                 
-                st.markdown("### 💰 Pricing")
+                render_section_header("Pricing", "💰")
                 bundle_total = st.number_input(
                     f"Total Bundle Price (€) - {total_books} books",
                     min_value=0.0,
@@ -659,32 +670,29 @@ elif page == "💰 Sales":
                     key="bundle_total"
                 )
                 
-                bundle_packaging = st.number_input(
-                    "Packaging per Book (€)",
+                bundle_packaging_total = st.number_input(
+                    "Packaging Total (€)",
                     min_value=0.0,
-                    value=DEFAULT_PACKAGING_COST,
+                    value=DEFAULT_PACKAGING_COST * total_books,
                     step=0.10,
-                    key="bundle_packaging"
+                    key="bundle_packaging_total"
                 )
                 
+                bundle_packaging = bundle_packaging_total / total_books if total_books > 0 else 0
+                
                 st.divider()
                 
-                st.markdown("### 👤 Customer")
+                render_section_header("Customer", "👤")
                 bundle_customer = st.text_input("Customer Name", key="bundle_customer")
-                bundle_username = st.text_input("Vinted Username", key="bundle_username")
-                bundle_platform = st.selectbox("Platform", [p.value for p in Platform], key="bundle_platform")
+                bundle_username = st.text_input("@️ Username", key="bundle_username")
+                bundle_platform = st.selectbox("Platform", PLATFORMS, key="bundle_platform")
                 
-                col_date, col_time = st.columns([2, 1])
-                with col_date:
-                    bundle_date = st.date_input("Date", value=datetime.now(), key="bundle_date")
-                with col_time:
-                    bundle_time = st.time_input("Time", value=datetime.now().time(), key="bundle_time")
-                
-                bundle_datetime_str = f"{bundle_date.strftime('%Y-%m-%d')} {bundle_time.strftime('%H:%M')}"
+                bundle_date = st.date_input("Date", value=datetime.now(), key="bundle_date")
+                bundle_datetime_str = bundle_date.strftime('%Y-%m-%d')
                 
                 st.divider()
                 
-                st.markdown("### 📊 Bundle Preview")
+                render_section_header("Bundle Preview", "📊")
                 
                 from src.calculations import calculate_bundle_profit
                 buy_prices = [b['buy_price'] for b in selected_book_objs]
@@ -707,7 +715,7 @@ elif page == "💰 Sales":
                 
                 st.divider()
                 
-                if st.button("✅ Record Bundle Sale", type="primary", width='stretch', key="submit_bundle"):
+                if st.button("✅ Record Bundle Sale", type="primary", use_container_width=True, key="submit_bundle"):
                     if not bundle_customer.strip() or not bundle_username.strip():
                         show_error_toast("Customer info required")
                         st.error("❌ Please enter customer name and username")
@@ -737,94 +745,118 @@ elif page == "💰 Sales":
 
 
 # ============================================================================
-# ANALYTICS PAGE (ENHANCED)
+# ANALYTICS PAGE
 # ============================================================================
 elif page == "📊 Analytics":
-    st.header("📊 Business Analytics")
+    render_page_header(
+        "Business Analytics",
+        "Insights into your sales performance and inventory health"
+    )
     
+    # Force fresh data
     stats = get_stats()
+    all_sales = get_sales()
+    grouped_sales = group_sales_by_bundle(all_sales)
     
-    # ✅ ENHANCED: More time range options
-    col_filter, col_refresh = st.columns([3, 1])
-    with col_filter:
-        time_range = st.selectbox(
-            "📅 Time Range",
-            ["All Time", "Today", "Last 2 Days", "Last Week", "Last 3 Weeks", "Last Month"],
-        )
-    with col_refresh:
-        if st.button("🔄 Refresh", width='stretch'):
-            show_success_toast("Refreshed!")
-            st.rerun()
+    # Calculate metrics
+    total_revenue = sum(s["total"] for s in grouped_sales)
+    total_items = sum(s["qty"] for s in grouped_sales)
+    total_profit = sum(s['profit'] for s in grouped_sales)
+    num_transactions = len(grouped_sales)
     
-    # ✅ Filter sales based on selection
-    if time_range == "Today":
-        filtered_sales = get_sales_by_date_range(1)
-    elif time_range == "Last 2 Days":
-        filtered_sales = get_sales_by_date_range(2)
-    elif time_range == "Last Week":
-        filtered_sales = get_sales_by_date_range(7)
-    elif time_range == "Last 3 Weeks":
-        filtered_sales = get_sales_by_date_range(21)
-    elif time_range == "Last Month":
-        filtered_sales = get_sales_by_date_range(30)
-    else:
-        filtered_sales = get_sales()
+    # Count unique bundles vs single sales
+    bundles_count = len([s for s in grouped_sales if s['type'] == 'bundle'])
+    single_sales_count = len([s for s in grouped_sales if s['type'] == 'single'])
     
-    grouped_filtered_sales = group_sales_by_bundle(filtered_sales)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    filtered_revenue = sum(s["total"] for s in grouped_filtered_sales)
-    filtered_items = sum(s["qty"] for s in grouped_filtered_sales)
-    filtered_profit = sum(s['profit'] for s in grouped_filtered_sales)
-    
-    # ✅ Count unique transactions (commands)
-    num_transactions = len(grouped_filtered_sales)
-    
-    st.caption(f"📊 Showing data for: {time_range}")
-    st.divider()
-    
-    # ✅ ENHANCED: Top metrics with transactions + items sold
+    # Beautiful gradient metrics
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("💰 Revenue", f"€{filtered_revenue:.2f}")
-        st.caption(f"📦 {num_transactions} transaction(s)")  # ✅ Number of commands
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        padding: 25px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);"
+                        title="{total_items} books sold in {num_transactions} transactions">
+                <h3 style="margin: 0; font-size: 32px;">💰</h3>
+                <p style="margin: 8px 0; font-size: 13px; opacity: 0.95; font-weight: 600;">REVENUE</p>
+                <h2 style="margin: 5px 0; font-size: 26px; font-weight: 700;">€{total_revenue:.2f}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.9;">📦 {total_items} books • {bundles_count} bundles</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     with col2:
-        margin = (filtered_profit / filtered_revenue * 100) if filtered_revenue > 0 else 0
-        st.metric("📈 Profit", f"€{filtered_profit:.2f}", delta=f"{margin:.1f}%")
+        margin_pct = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); 
+                        padding: 25px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(67, 233, 123, 0.3);">
+                <h3 style="margin: 0; font-size: 32px;">📈</h3>
+                <p style="margin: 8px 0; font-size: 13px; opacity: 0.95; font-weight: 600;">PROFIT</p>
+                <h2 style="margin: 5px 0; font-size: 26px; font-weight: 700;">€{total_profit:.2f}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.9;">Margin: {margin_pct:.1f}%</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     with col3:
-        st.metric("📚 Books Sold", filtered_items)  # ✅ Total books sold
-        avg_books_per_order = filtered_items / num_transactions if num_transactions > 0 else 0
-        st.caption(f"Avg: {avg_books_per_order:.1f} books/order")
+        avg_books_per_order = total_items / num_transactions if num_transactions > 0 else 0
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); 
+                        padding: 25px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(250, 112, 154, 0.3);">
+                <h3 style="margin: 0; font-size: 32px;">📚</h3>
+                <p style="margin: 8px 0; font-size: 13px; opacity: 0.95; font-weight: 600;">BOOKS SOLD</p>
+                <h2 style="margin: 5px 0; font-size: 26px; font-weight: 700;">{total_items}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.9;">Avg: {avg_books_per_order:.1f} books/order</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     with col4:
-        avg_order_value = filtered_revenue / num_transactions if num_transactions > 0 else 0
-        st.metric("🧾 Avg Order", f"€{avg_order_value:.2f}")
+        avg_order_value = total_revenue / num_transactions if num_transactions > 0 else 0
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+                        padding: 25px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(79, 172, 254, 0.3);">
+                <h3 style="margin: 0; font-size: 32px;">🧾</h3>
+                <p style="margin: 8px 0; font-size: 13px; opacity: 0.95; font-weight: 600;">AVG ORDER</p>
+                <h2 style="margin: 5px 0; font-size: 26px; font-weight: 700;">€{avg_order_value:.2f}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.9;">Per transaction</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     
-    st.divider()
+    st.markdown("<br><br>", unsafe_allow_html=True)
     
     # Inventory status
-    st.subheader("📦 Inventory Status")
-    col1, col2, col3, col4 = st.columns(4)
+    render_section_header("Inventory Status", "📦")
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric("📚 Active", stats['active_count'])
     with col2:
         st.metric("🔴 Sold Out", stats['sold_count'])
     with col3:
-        st.metric("🏦 Stock Value", f"€{stats['stock_value']:.2f}")
-    with col4:
-        if stats['potential_revenue'] > 0:
-            potential_profit = stats['potential_revenue'] - stats['stock_value']
-            st.metric("💎 Potential", f"€{potential_profit:.2f}")
-        else:
-            st.metric("💎 Potential", "Set targets")
+        st.metric("📦 Total Stock", stats['total_stock'])
     
-    st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # Charts
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("🛒 Sales by Platform")
+        render_section_header("Sales by Platform", "🛒")
         if stats['platform_sales']:
             platform_df = pd.DataFrame([
                 {"Platform": k, "Revenue (€)": v} 
@@ -835,11 +867,11 @@ elif page == "📊 Analytics":
             st.info("No sales data")
     
     with col2:
-        st.subheader("📅 Sales Timeline")
-        if filtered_sales:
+        render_section_header("Sales Timeline", "📅")
+        if all_sales:
             sales_by_date = {}
-            for s in filtered_sales:
-                date = s["date"].split()[0]
+            for s in all_sales:
+                date = s["date"]
                 sales_by_date[date] = sales_by_date.get(date, 0) + s["total"]
             
             timeline_df = pd.DataFrame([
@@ -848,18 +880,18 @@ elif page == "📊 Analytics":
             ])
             st.line_chart(timeline_df.set_index("Date"), height=300)
         else:
-            st.info("No sales in period")
+            st.info("No sales data")
     
-    st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # Insights
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("🏆 Best Sellers")
-        if filtered_sales:
+        render_section_header("Best Sellers", "🏆")
+        if all_sales:
             book_sales = {}
-            for s in filtered_sales:
+            for s in all_sales:
                 title = s["book_title"]
                 book_sales[title] = book_sales.get(title, 0) + s["qty"]
             
@@ -872,7 +904,7 @@ elif page == "📊 Analytics":
             st.info("No sales to analyze")
     
     with col2:
-        st.subheader("⚠️ Alerts")
+        render_section_header("Alerts", "⚠️")
         
         alerts_count = 0
         
@@ -892,3 +924,65 @@ elif page == "📊 Analytics":
         
         if alerts_count == 0:
             st.success("✅ All systems healthy!")
+
+
+# ============================================================================
+# QUICK MESSAGES PAGE
+# ============================================================================
+elif page == "💬 Quick Messages":
+    render_page_header(
+        "Quick Messages",
+        "Copy-paste templates for customer communication"
+    )
+    
+    render_info_banner(
+        "💡 Click 'Copy' to copy any message template to your clipboard. Edit placeholders like [NAME], [AMOUNT], etc.",
+        type="info"
+    )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Display all message templates
+    for key, template in QUICK_MESSAGES.items():
+        with st.expander(f"{template['title']}", expanded=False):
+            st.text_area(
+                "Message Template",
+                value=template['message'],
+                height=200,
+                key=f"msg_{key}",
+                label_visibility="collapsed"
+            )
+            
+            col1, col2 = st.columns([1, 4])
+            with col1:
+                if st.button("📋 Copy", key=f"copy_{key}", use_container_width=True):
+                    st.code(template['message'], language=None)
+                    show_success_toast("Copied to display!")
+                    st.info("👆 Select text above and copy (Ctrl+C / Cmd+C)")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Custom message creator
+    render_section_header("Create Custom Message", "✍️")
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        custom_title = st.text_input("Message Title", placeholder="e.g., Discount Offer")
+    
+    with col2:
+        custom_category = st.selectbox("Category", ["General", "Promotion", "Follow-up", "Support"])
+    
+    custom_message = st.text_area(
+        "Your Message",
+        placeholder="Type your custom message here...\n\nTip: Use placeholders like [NAME], [BOOK], [PRICE]",
+        height=150,
+        key="custom_msg"
+    )
+    
+    if st.button("💾 Save Custom Message", type="primary"):
+        if custom_title and custom_message:
+            st.success(f"✅ Message '{custom_title}' saved! (Note: Custom messages are session-only in this version)")
+            st.code(custom_message, language=None)
+        else:
+            st.error("❌ Please enter both title and message")
