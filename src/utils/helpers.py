@@ -32,13 +32,11 @@ def get_sales_by_date_range(days: int) -> list[dict]:
     all_sales = get_sales()
     filtered = []
     
-    print(f"\n🔍 FILTER DEBUG: Looking for sales between {start_date} and {today}")
-    
     for s in all_sales:
         try:
             date_str = s['date']
             
-            # ✅ Parse different date formats
+            # Parse different date formats
             if '/' in date_str:
                 sale_date = datetime.strptime(date_str, "%d/%m/%Y").date()
             elif ' ' in date_str:
@@ -46,20 +44,12 @@ def get_sales_by_date_range(days: int) -> list[dict]:
             else:
                 sale_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             
-            # ✅ FIXED: Only include sales within range AND not in future
+            # Only include sales within range AND not in future
             if start_date <= sale_date <= today:
                 filtered.append(s)
-                print(f"   ✅ Sale {s['id']}: {date_str} → {sale_date} (INCLUDED)")
-            elif sale_date > today:
-                print(f"   ⏭️  Sale {s['id']}: {date_str} → {sale_date} (FUTURE - EXCLUDED)")
-            else:
-                print(f"   ❌ Sale {s['id']}: {date_str} → {sale_date} (TOO OLD)")
                 
-        except Exception as e:
-            print(f"   ⚠️ Date filter error for sale {s['id']}: {date_str} - {e}")
+        except Exception:
             continue
-    
-    print(f"   📊 Result: {len(filtered)} sales in last {days} days\n")
     
     return filtered
 

@@ -3,29 +3,25 @@ Database Operations
 SQLite database management with SQLModel
 """
 
-from datetime import datetime, date
+import uuid
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
-import uuid
 
 import pandas as pd
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 
-from src.config import PLATFORMS, GENRES
+from src.config import GENRES, PLATFORMS
 
 # Database path
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DB_PATH = DATA_DIR / "midad.db"
-
-print(f"📂 Database path: {DB_PATH}")
-
 
 # ============================================================================
 # MODELS
 # ============================================================================
 class Customer(SQLModel, table=True):
     """Customer database."""
-    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
     
     id: Optional[int] = Field(default=None, primary_key=True)
     vinted_username: str = Field(index=True, unique=True)
@@ -39,9 +35,8 @@ class Customer(SQLModel, table=True):
 
 class Book(SQLModel, table=True):
     """Book in inventory."""
-    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
     
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: str = Field(primary_key=True)
     title: str = Field(index=True)
     author: str = ""
     genre: str = Field(default="Other")
@@ -64,7 +59,6 @@ class Book(SQLModel, table=True):
 
 class Sale(SQLModel, table=True):
     """Sale record."""
-    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
     
     id: Optional[int] = Field(default=None, primary_key=True)
     date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
@@ -75,7 +69,7 @@ class Sale(SQLModel, table=True):
     platform: str = Field(default="Vinted")
     bundle_id: Optional[str] = Field(default=None, index=True)
     
-    book_id: Optional[int] = Field(default=None, foreign_key="book.id")
+    book_id: Optional[str] = Field(default=None, foreign_key="book.id")
     book: Optional[Book] = Relationship(back_populates="sales")
     
     customer_id: int = Field(foreign_key="customer.id")
@@ -84,7 +78,6 @@ class Sale(SQLModel, table=True):
 
 class QuickMessage(SQLModel, table=True):
     """Quick message templates."""
-    __table_args__ = {'extend_existing': True}  # ✅ FIX: Prevent redefinition error
     
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
@@ -98,15 +91,25 @@ class QuickMessage(SQLModel, table=True):
 # ============================================================================
 # DATABASE ENGINE
 # ============================================================================
-def get_engine():
-    """Get or create database engine."""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    return create_engine(f"sqlite:///{DB_PATH}", echo=False)
+_engine = None  # ✅ Singleton pattern
 
+def get_engine():
+    """Get or create database engine (singleton)."""
+    global _engine
+    if _engine is None:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        _engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
+    return _engine
+
+
+_initialized = False  # ✅ Global flag
 
 def init_db():
-    """Create tables and initialize default messages."""
-    print("🔧 Initializing database...")
+    """Create tables and initialize default messages (only once)."""
+    global _initialized
+    if _initialized:
+        return  # ✅ Skip if already initialized
+    
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
     
@@ -114,7 +117,6 @@ def init_db():
     with Session(engine) as session:
         existing = session.exec(select(QuickMessage)).first()
         if not existing:
-            print("📝 Creating default quick messages...")
             from src.config import DEFAULT_QUICK_MESSAGES
             for i, (key, msg) in enumerate(DEFAULT_QUICK_MESSAGES.items()):
                 quick_msg = QuickMessage(
@@ -125,9 +127,8 @@ def init_db():
                 )
                 session.add(quick_msg)
             session.commit()
-            print("✅ Default messages created")
     
-    print("✅ Database initialized")
+    _initialized = True  # ✅ Mark as initialized
 
 
 # ============================================================================
@@ -210,6 +211,25 @@ def get_customers() -> list[dict]:
 # ============================================================================
 # BOOK OPERATIONS
 # ============================================================================
+def generate_book_id() -> str:
+    """Generate next book ID in format BOOK-XXX."""
+    with Session(get_engine()) as session:
+        books = session.exec(select(Book)).all()
+        
+        # Extract numeric parts from existing IDs
+        max_num = 0
+        for book in books:
+            if book.id and book.id.startswith("BOOK-"):
+                try:
+                    num = int(book.id.replace("BOOK-", ""))
+                    max_num = max(max_num, num)
+                except ValueError:
+                    pass
+        
+        # Return next ID
+        return f"BOOK-{max_num + 1:03d}"
+
+
 def get_books(filter_type: Optional[str] = None) -> list[dict]:
     """Get all books with computed status."""
     with Session(get_engine()) as session:
@@ -278,17 +298,18 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                 except ValueError as e:
                     return False, f"❌ Invalid number format for '{title}': {e}"
                 
-                # Check if book exists
+                # Check if book exists (book_id is now string)
                 book_id = data.get("id")
                 is_existing = (
                     book_id is not None 
                     and not (isinstance(book_id, float) and pd.isna(book_id))
-                    and int(book_id) in existing
+                    and str(book_id) != ""
+                    and str(book_id) in existing
                 )
                 
                 if is_existing:
                     # Update existing book
-                    book = existing[int(book_id)]
+                    book = existing[str(book_id)]
                     book.title = title
                     book.author = str(data.get("author", ""))
                     book.genre = str(data.get("genre", "Other"))
@@ -296,10 +317,12 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                     book.target_price = target_price
                     book.stock = stock
                     book.notes = str(data.get("notes", ""))
-                    processed_ids.add(int(book_id))
+                    processed_ids.add(str(book_id))
                 else:
-                    # Create new book
+                    # Create new book with generated ID
+                    new_id = generate_book_id()
                     book = Book(
+                        id=new_id,
                         title=title,
                         author=str(data.get("author", "")),
                         genre=str(data.get("genre", "Other")),
@@ -357,7 +380,7 @@ def get_sales() -> list[dict]:
         return result
 
 
-def add_sale(book_id: int, qty: int, total_paid: float, packaging_per_book: float,
+def add_sale(book_id: str, qty: int, total_paid: float, packaging_per_book: float,
              customer_name: str, customer_username: str, platform: str,
              sale_date: Optional[str] = None) -> tuple[bool, str]:
     """Record single book sale."""
@@ -434,7 +457,7 @@ def add_sale(book_id: int, qty: int, total_paid: float, packaging_per_book: floa
         return False, f"❌ Error: {str(e)}"
 
 
-def add_bundle_sale(book_ids: list[int], quantities: list[int], total_paid: float,
+def add_bundle_sale(book_ids: list[str], quantities: list[int], total_paid: float,
                    packaging_per_book: float, customer_name: str, customer_username: str,
                    platform: str, sale_date: Optional[str] = None) -> tuple[bool, str]:
     """Record bundle sale."""
@@ -524,7 +547,7 @@ def delete_sale(sale_id: int) -> tuple[bool, str]:
         with Session(get_engine()) as session:
             sale = session.get(Sale, sale_id)
             if not sale:
-                return False, "❌ Sale not found"
+                return False, "Sale not found"
             
             # If part of bundle, delete entire bundle
             if sale.bundle_id:

@@ -1,0 +1,886 @@
+{
+  "books": [
+    {
+      "id": "BOOK-001",
+      "name": "فن اللامبالاة :  لعيش حياة تخالف المألوف",
+      "isbn": "6144720197",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | L'art de s'en foutre | Psychologie Developpement Personnel | Cadeau",
+        "Arabic Book NEW | The Subtle Art of Not Giving F* | Psychology Self-Help | Gift Idea",
+        "Arabisches Buch NEU | Die Kunst des Loslassens | Psychologie Selbsthilfe | Geschenk",
+        "Libro Arabo NUOVO | L'arte di non preoccuparsi | Psicologia Sviluppo Personale | Regalo"
+      ],
+      "description_file": "books/BOOK-001/description.txt",
+      "images_folder": "books/BOOK-001/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 14.99
+    },
+    {
+      "id": "BOOK-002",
+      "name": "أحببت وغدا : التعافي من العلاقات المؤذية",
+      "isbn": "9778240469",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Relations Toxiques Narcissisme | Psychologie Guerison | Bestseller",
+        "Arabic Book NEW | Toxic Relationships Narcissism | Psychology Healing Recovery | Best-seller",
+        "Arabisches Buch NEU | Toxische Beziehungen Narzissmus | Psychologie Heilung | Bestseller",
+        "Libro Arabo NUOVO | Relazioni Tossiche Narcisismo | Psicologia Guarigione | Bestseller"
+      ],
+      "description_file": "books/BOOK-002/description.txt",
+      "images_folder": "books/BOOK-002/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-003",
+      "name": "الأب الغني والأب الفقير",
+      "isbn": "1612681131",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Pere Riche Pere Pauvre KIYOSAKI | Finance Investissement | Bestseller",
+        "Arabic Book NEW | Rich Dad Poor Dad KIYOSAKI | Finance Investment Business | Best-seller",
+        "Arabisches Buch NEU | Reicher Vater Armer Vater | Finanzen Investition | Bestseller",
+        "Libro Arabo NUOVO | Padre Ricco Padre Povero | Finanza Investimenti Business | Bestseller"
+      ],
+      "description_file": "books/BOOK-003/description.txt",
+      "images_folder": "books/BOOK-003/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 13.99
+    },
+    {
+      "id": "BOOK-004",
+      "name": "أول مرة أتدبر القرآن الكريم",
+      "isbn": "9996612341",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Meditation Coran | Religion Islam Spiritualite Reflexion | Cadeau",
+        "Arabic Book NEW | Quran Meditation | Religion Islam Spirituality Reflection | Gift",
+        "Arabisches Buch NEU | Koran Meditation | Religion Islam Spiritualitat | Geschenk",
+        "Libro Arabo NUOVO | Meditazione Corano | Religione Islam Spiritualita | Regalo"
+      ],
+      "description_file": "books/BOOK-004/description.txt",
+      "images_folder": "books/BOOK-004/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 14.99
+    },
+    {
+      "id": "BOOK-005",
+      "name": "عقدك النفسية سجنك الأبدي",
+      "isbn": "9778591660",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Tes Complexes Ta Prison | Psychologie Sante Mentale Guerison | Top rated",
+        "Arabic Book NEW | Your Complexes Your Prison | Psychology Mental Health Healing | Top",
+        "Arabisches Buch NEU | Psychologie Komplexe | Personliche Entwicklung Gesundheit | Top rated",
+        "Libro Arabo NUOVO | Psicologia Complessi | Sviluppo Personale Salute Mentale | Top"
+      ],
+      "description_file": "books/BOOK-005/description.txt",
+      "images_folder": "books/BOOK-005/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.5
+    },
+    {
+      "id": "BOOK-006",
+      "name": "كل أزرق السماء",
+      "isbn": "8491297545",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Tout le Bleu du Ciel | Roman Poetique Emotion Bestseller | Cadeau",
+        "Arabic Book NEW | All the Sky Blue | Poetic Novel Emotion Best-seller | Gift Idea",
+        "Arabisches Buch NEU | Poetischer Roman Emotion | Zeitgenossische Literatur | Geschenk",
+        "Libro Arabo NUOVO | Romanzo Poetico Emozione | Letteratura Contemporanea | Regalo"
+      ],
+      "description_file": "books/BOOK-006/description.txt",
+      "images_folder": "books/BOOK-006/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 14.49
+    },
+    {
+      "id": "BOOK-007",
+      "name": "ثلاثية غرناطة",
+      "isbn": "9770811017",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Trilogie Grenade | Roman Historique Andalousie Heritage | Classique",
+        "Arabic Book NEW | Granada Trilogy | Historical Novel Andalusia Heritage | Classic",
+        "Arabisches Buch NEU | Granada Trilogie | Historischer Roman Andalusien | Klassiker",
+        "Libro Arabo NUOVO | Trilogia di Granada | Romanzo Storico Andalusia | Classico"
+      ],
+      "description_file": "books/BOOK-007/description.txt",
+      "images_folder": "books/BOOK-007/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 14.95
+    },
+    {
+      "id": "BOOK-008",
+      "name": "رواية الهلكوت",
+      "isbn": "9778240469",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Roman Philosophique Reflexion | Fiction Pensee Litterature | Unique",
+        "Arabic Book NEW | Philosophical Novel Reflection | Fiction Thought Literature | Unique",
+        "Arabisches Buch NEU | Philosophischer Roman Reflexion | Fiktion Literatur | Einzigartig",
+        "Libro Arabo NUOVO | Romanzo Filosofico Riflessione | Narrativa Pensiero | Unico"
+      ],
+      "description_file": "books/BOOK-008/description.txt",
+      "images_folder": "books/BOOK-008/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.25
+    },
+    {
+      "id": "BOOK-009",
+      "name": "الخيميائي",
+      "isbn": "0062315005",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | L'Alchimiste Paulo Coelho | Bestseller Mondial Philosophie | Cadeau",
+        "Arabic Book NEW | The Alchemist Paulo Coelho | Global Bestseller Philosophy | Gift",
+        "Arabisches Buch NEU | Der Alchemist Paulo Coelho | Weltbestseller Philosophie | Geschenk",
+        "Libro Arabo NUOVO | L'Alchimista Paulo Coelho | Bestseller Mondiale Filosofia | Regalo"
+      ],
+      "description_file": "books/BOOK-009/description.txt",
+      "images_folder": "books/BOOK-009/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-010",
+      "name": "الإخوة كارامازوف",
+      "isbn": "9953582823",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | 4 books | Freres Karamazov Dostoievski | Classique Russe Chef-d'oeuvre",
+        "Arabic Book NEW | 4 books| Brothers Karamazov Dostoevsky | Russian Classic Masterpiece",
+        "Arabisches Buch NEU | 4 books | Bruder Karamasow Dostojewski | Russischer Klassiker",
+        "Libro Arabo NUOVO | 4 books | Fratelli Karamazov Dostoevskij | Classico Russo Capolavoro"
+      ],
+      "description_file": "books/BOOK-010/description.txt",
+      "images_folder": "books/BOOK-010/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 44.99
+    },
+    {
+      "id": "BOOK-011",
+      "name": "الجريمة والعقاب",
+      "isbn": "918997252X",
+      "category": "Non-fiction",
+      "titles": [
+        "2 books | Livre Arabe NEUF | Crime et Chatiment Dostoievski | Classique Russe Psychologie | Rare",
+        "2 books | Arabic Book NEW | Crime and Punishment Dostoevsky | Russian Classic Psychology | Rare",
+        "2 books | Arabisches Buch NEU | Schuld und Suhne Dostojewski | Russischer Klassiker | Selten",
+        "2 books | Libro Arabo NUOVO | Delitto e Castigo Dostoevskij | Classico Russo Psicologia | Raro"
+      ],
+      "description_file": "books/BOOK-011/description.txt",
+      "images_folder": "books/BOOK-011/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 29.99
+    },
+    {
+      "id": "BOOK-012",
+      "name": "التحول",
+      "isbn": "9921723006",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | La Metamorphose Kafka | Classique Mondial Fiction Philosophie | Top",
+        "Arabic Book NEW | The Metamorphosis Kafka | World Classic Fiction Philosophy | Top Rated",
+        "Arabisches Buch NEU | Die Verwandlung Kafka | Weltklassiker Fiktion Philosophie | Top",
+        "Libro Arabo NUOVO | La Metamorfosi Kafka | Classico Mondiale Narrativa Filosofia | Top"
+      ],
+      "description_file": "books/BOOK-012/description.txt",
+      "images_folder": "books/BOOK-012/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 14.0
+    },
+    {
+      "id": "BOOK-013",
+      "name": "لأنها كيارا",
+      "isbn": "6038411933",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Because She is Kiara Fantasy | Vampires Magie Romance | Bestseller",
+        "Arabic Book NEW | Because She is Kiara Fantasy | Vampires Magic Romance | Best-seller",
+        "Arabisches Buch NEU | Moderne Liebesgeschichte | Jugendfiktion Romantik Emotion | Geschenk",
+        "Libro Arabo NUOVO | Storia d'Amore Moderna | Narrativa Giovane Romantico | Regalo"
+      ],
+      "description_file": "books/BOOK-013/description.txt",
+      "images_folder": "books/BOOK-013/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.0
+    },
+    {
+      "id": "BOOK-014",
+      "name": "سيكولوجية المال",
+      "isbn": "9921767003",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Psychologie de l'Argent | Finance Personnelle Investissement | Best",
+        "Arabic Book NEW | Psychology of Money | Personal Finance Investment Wealth | Best-seller",
+        "Arabisches Buch NEU | Psychologie des Geldes | Personliche Finanzen Investition | Best",
+        "Libro Arabo NUOVO | Psicologia del Denaro | Finanza Personale Investimenti | Bestseller"
+      ],
+      "description_file": "books/BOOK-014/description.txt",
+      "images_folder": "books/BOOK-014/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 16.0
+    },
+    {
+      "id": "BOOK-015",
+      "name": "مجموعة كاملة",
+      "isbn": "9778240469",
+      "category": "Non-fiction",
+      "titles": [
+        "Livres Arabes NEUFS | Romans Classiques Bestsellers | Collection Complete",
+        "Arabic Books NEW | Novels Classics Best-sellers | Complete Collection Bundle",
+        "Arabische Bücher NEU | Romane Klassiker Bestseller | Komplette Sammlung",
+        "Libri Arabi NUOVI | Romanzi Classici Bestseller | Collezione Completa"
+      ],
+      "description_file": "books/BOOK-015/description.txt",
+      "images_folder": "books/BOOK-015/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-016",
+      "name": "نظرية الفستق",
+      "isbn": "6035063799",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | La Théorie du Pistache | Développement Personnel Psychologie | Fahd Al-Ahmadi",
+        "Arabic Book NEW | The Pistachio Theory | Self-Help Personal Development | Fahd Amer Al-Ahmadi",
+        "Arabisches Buch NEU | Die Pistazien-Theorie | Selbsthilfe Persönlichkeitsentwicklung | Fahd Al-Ahmadi",
+        "Libro Arabo NUOVO | La Teoria del Pistacchio | Auto-Aiuto Sviluppo Personale | Fahd Al-Ahmadi"
+      ],
+      "description_file": "books/BOOK-016/description.txt",
+      "images_folder": "books/BOOK-016/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-017",
+      "name": "فن أن تكون دائماً على صواب",
+      "isbn": "6140109310",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | L'Art d'Avoir Toujours Raison | Schopenhauer Philosophie Dialectique | Arthur Schopenhauer",
+        "Arabic Book NEW | The Art of Being Right | Schopenhauer Philosophy Dialectics | Arthur Schopenhauer",
+        "Arabisches Buch NEU | Die Kunst Recht zu Behalten | Schopenhauer Philosophie Dialektik | Arthur Schopenhauer",
+        "Libro Arabo NUOVO | L'Arte di Avere Sempre Ragione | Schopenhauer Filosofia Dialettica | Arthur Schopenhauer"
+      ],
+      "description_file": "books/BOOK-017/description.txt",
+      "images_folder": "books/BOOK-017/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-018",
+      "name": "ألف ليلة وليلة",
+      "isbn": "9953136661",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les Mille et Une Nuits | Contes Classiques Scheherazade | Collection Hardcover",
+        "Arabic Book NEW | One Thousand and One Nights | Classic Tales Scheherazade | Hardcover Collection",
+        "Arabisches Buch NEU | Tausendundeine Nacht | Klassische Märchen Scheherazade | Hardcover Sammlung",
+        "Libro Arabo NUOVO | Le Mille e Una Notte | Racconti Classici Scheherazade | Collezione Copertina Rigida"
+      ],
+      "description_file": "books/BOOK-018/description.txt",
+      "images_folder": "books/BOOK-018/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-019",
+      "name": "أسرار عقل المليونير",
+      "isbn": "2922405419",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les Secrets de l'Esprit Millionnaire | T. Harv Eker | Finance Personnelle",
+        "Arabic Book NEW | Secrets of the Millionaire Mind | T. Harv Eker | Personal Finance",
+        "Arabisches Buch NEU | Geheimnisse des Millionärsgeistes | T. Harv Eker | Persönliche Finanzen",
+        "Libro Arabo NUOVO | I Segreti della Mente Milionaria | T. Harv Eker | Finanza Personale"
+      ],
+      "description_file": "books/BOOK-019/description.txt",
+      "images_folder": "books/BOOK-019/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-020",
+      "name": "البؤساء",
+      "isbn": "9922607484",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les Misérables Victor Hugo | Roman Historique Classique | Littérature Française",
+        "Arabic Book NEW | The Misérables Victor Hugo | Historical Fiction Classic | French Literature",
+        "Arabisches Buch NEU | Die Elenden Victor Hugo | Historischer Roman Klassiker | Französische Literatur",
+        "Libro Arabo NUOVO | I Miserabili Victor Hugo | Romanzo Storico Classico | Letteratura Francese"
+      ],
+      "description_file": "books/BOOK-020/description.txt",
+      "images_folder": "books/BOOK-020/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-021",
+      "name": "الليالي البيضاء",
+      "isbn": "9953688265",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les Nuits Blanches Dostoïevski | Littérature Classique Russe Romance | Traduction Arabe",
+        "Arabic Book NEW | White Nights Dostoevsky | Classic Russian Literature Romance | Arabic Translation",
+        "Arabisches Buch NEU | Weiße Nächte Dostojewski | Klassische Russische Literatur Romantik | Arabische Übersetzung",
+        "Libro Arabo NUOVO | Le Notti Bianche Dostoevskij | Letteratura Classica Russa Romanzo | Traduzione Araba"
+      ],
+      "description_file": "books/BOOK-021/description.txt",
+      "images_folder": "books/BOOK-021/images",
+      "condition": [
+        "Neuf sans étiquette",
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-022",
+      "name": "العادات السبع للناس الأكثر فعالية",
+      "isbn": "1982137274",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les 7 Habitudes des Gens Très Efficaces | Stephen Covey | Développement Personnel Leadership",
+        "Arabic Book NEW | The 7 Habits of Highly Effective People | Stephen Covey | Self-Help Leadership Success",
+        "Arabisches Buch NEU | Die 7 Wege zur Effektivität | Stephen Covey | Selbsthilfe Führung",
+        "Libro Arabo NUOVO | Le 7 Abitudini della Gente Altamente Efficace | Stephen Covey | Sviluppo Personale Leadership"
+      ],
+      "description_file": "books/BOOK-022/description.txt",
+      "images_folder": "books/BOOK-022/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-023",
+      "name": "ألف شمس ساطعة",
+      "isbn": "9992194065",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Mille Soleils Splendides | Khaled Hosseini | Roman Contemporain Afghanistan",
+        "Arabic Book NEW | A Thousand Splendid Suns | Khaled Hosseini | Contemporary Fiction Afghanistan",
+        "Arabisches Buch NEU | Tausend Strahlende Sonnen | Khaled Hosseini | Zeitgenössische Literatur Afghanistan",
+        "Libro Arabo NUOVO | Mille Splendidi Soli | Khaled Hosseini | Narrativa Contemporanea Afghanistan"
+      ],
+      "description_file": "books/BOOK-023/description.txt",
+      "images_folder": "books/BOOK-023/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-024",
+      "name": "عداء الطائرة الورقية",
+      "isbn": "9992178965",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Cerf-Volant (The Kite Runner) | Khaled Hosseini | Roman Contemporain",
+        "Arabic Book NEW | The Kite Runner | Khaled Hosseini | Contemporary Fiction | Afghanistan",
+        "Arabisches Buch NEU | Drachenläufer | Khaled Hosseini | Zeitgenössische Literatur",
+        "Libro Arabo NUOVO | Il Cacciatore di Aquiloni | Khaled Hosseini | Narrativa Contemporanea"
+      ],
+      "description_file": "books/BOOK-024/description.txt",
+      "images_folder": "books/BOOK-024/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-025",
+      "name": "الأسود يليق بك",
+      "isbn": "9789953267135",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Noir Te Va Si Bien | Ahlam Mosteghanemi | Romance Littéraire",
+        "Arabic Book NEW | Black Suits You | Ahlam Mosteghanemi | Literary Romance",
+        "Arabisches Buch NEU | Schwarz Steht Dir Gut | Ahlam Mosteghanemi | Literarische Romanze",
+        "Libro Arabo NUOVO | Il Nero Ti Sta Bene | Ahlam Mosteghanemi | Romanzo Letterario"
+      ],
+      "description_file": "books/BOOK-025/description.txt",
+      "images_folder": "books/BOOK-025/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-026",
+      "name": "في قلبي أنثى عبرية",
+      "isbn": "993805210X",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Dans Mon Cœur Une Femme Hébraïque | Romance Littéraire Épique 774p | Khaoula Hamdi",
+        "Arabic Book NEW | In My Heart a Hebrew Woman | Epic Literary Romance 774p | Khaoula Hamdi",
+        "Arabisches Buch NEU | In Meinem Herzen Eine Hebräische Frau | Epische Literarische Romanze 774S | Khaoula Hamdi",
+        "Libro Arabo NUOVO | Nel Mio Cuore Una Donna Ebrea | Romanzo Letterario Epico 774p | Khaoula Hamdi"
+      ],
+      "description_file": "books/BOOK-026/description.txt",
+      "images_folder": "books/BOOK-026/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-027",
+      "name": "اقوم قيلا",
+      "isbn": "6039073004",
+      "category": "Islamic Studies",
+      "titles": [
+        "Livre Arabe NEUF | Je Me Lève et Je Parle | Apologétique Islamique 320p | Sultan Mousa Al Mousa",
+        "Arabic Book NEW | I Rise and Speak | Islamic Apologetics 320p | Sultan Mousa Al Mousa",
+        "Arabisches Buch NEU | Ich Erhebe Mich und Spreche | Islamische Apologetik 320S | Sultan Mousa Al Mousa",
+        "Libro Arabo NUOVO | Mi Alzo e Parlo | Apologetica Islamica 320p | Sultan Mousa Al Mousa"
+      ],
+      "description_file": "books/BOOK-027/description.txt",
+      "images_folder": "books/BOOK-027/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-028",
+      "name": "عالم صوفي",
+      "isbn": "9789185365937",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Monde de Sophie | Roman Philosophique Jeunesse | Jostein Gaarder",
+        "Arabic Book NEW | Sophie's World | Philosophical Fiction Young Adult | Jostein Gaarder",
+        "Arabisches Buch NEU | Sofies Welt | Philosophischer Roman Jugend | Jostein Gaarder",
+        "Libro Arabo NUOVO | Il Mondo di Sofia | Romanzo Filosofico Giovani | Jostein Gaarder"
+      ],
+      "description_file": "books/BOOK-028/description.txt",
+      "images_folder": "books/BOOK-028/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-029",
+      "name": "شيفرة دافينشي",
+      "isbn": "9789953297873",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Code Da Vinci | Dan Brown | Thriller Mystère Best-seller",
+        "Arabic Book NEW | The Da Vinci Code | Dan Brown | Mystery Thriller Bestseller",
+        "Arabisches Buch NEU | Der Da Vinci Code | Dan Brown | Mystery Thriller Bestseller",
+        "Libro Arabo NUOVO | Il Codice Da Vinci | Dan Brown | Thriller Mistero Bestseller"
+      ],
+      "description_file": "books/BOOK-029/description.txt",
+      "images_folder": "books/BOOK-029/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-030",
+      "name": "كافكا على الشاطئ",
+      "isbn": "9788658310917",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Kafka sur le Rivage | Haruki Murakami | Roman Littéraire",
+        "Arabic Book NEW | Kafka on the Shore | Haruki Murakami | Literary Fiction",
+        "Arabisches Buch NEU | Kafka am Strand | Haruki Murakami | Literarischer Roman",
+        "Libro Arabo NUOVO | Kafka sulla Spiaggia | Haruki Murakami | Narrativa Letteraria"
+      ],
+      "description_file": "books/BOOK-030/description.txt",
+      "images_folder": "books/BOOK-030/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-031",
+      "name": "سيكولوجية الجماهير",
+      "isbn": "9786144251751",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Psychologie des Foules | Gustave Le Bon | Psychologie Sociale Classique",
+        "Arabic Book NEW | The Crowd: A Study of the Popular Mind | Social Psychology Classic | Le Bon",
+        "Arabisches Buch NEU | Psychologie der Massen | Gustave Le Bon | Sozialpsychologie Klassiker",
+        "Libro Arabo NUOVO | Psicologia delle Folle | Gustave Le Bon | Psicologia Sociale Classica"
+      ],
+      "description_file": "books/BOOK-031/description.txt",
+      "images_folder": "books/BOOK-031/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-032",
+      "name": "عزازيل",
+      "isbn": "9770950688",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Azazeel عزازيل | Youssef Ziedan | Roman Historique Philosophique | Prix Booker Arabe",
+        "Arabic Book NEW | Azazeel عزازيل | Youssef Ziedan | Historical Philosophical Novel | Arabic Booker Prize",
+        "Arabisches Buch NEU | Azazeel عزازيل | Youssef Ziedan | Historischer Philosophischer Roman | Arabischer Booker-Preis",
+        "Libro Arabo NUOVO | Azazeel عزازيل | Youssef Ziedan | Romanzo Storico Filosofico | Premio Booker Arabo"
+      ],
+      "description_file": "books/BOOK-032/description.txt",
+      "images_folder": "books/BOOK-032/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-033",
+      "name": "لا تكن لطيفاً أكثر من اللازم",
+      "isbn": "9780446673860",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Ne Sois Pas Trop Gentil | Développement Personnel Psychologie | Duke Robinson",
+        "Arabic Book NEW | Don't Be Too Nice | Self-Help Personal Development | Duke Robinson",
+        "Arabisches Buch NEU | Sei Nicht Zu Nett | Selbsthilfe Persönlichkeitsentwicklung | Duke Robinson",
+        "Libro Arabo NUOVO | Non Essere Troppo Gentile | Auto-Aiuto Sviluppo Personale | Duke Robinson"
+      ],
+      "description_file": "books/BOOK-033/description.txt",
+      "images_folder": "books/BOOK-033/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-034",
+      "name": "الطنطورية",
+      "isbn": "9770928291",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | La Tanturiyya | Radwa Ashour | Roman Historique Palestine",
+        "Arabic Book NEW | Tantoureya | Radwa Ashour | Palestinian Historical Fiction",
+        "Arabisches Buch NEU | Die Tanturiyya | Radwa Ashour | Palästinensischer Historischer Roman",
+        "Libro Arabo NUOVO | La Tanturiyya | Radwa Ashour | Romanzo Storico Palestinese"
+      ],
+      "description_file": "books/BOOK-034/description.txt",
+      "images_folder": "books/BOOK-034/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-035",
+      "name": "السر",
+      "isbn": "2892258278",
+      "category": "Self-Help",
+      "titles": [
+        "Livre Arabe NEUF | Le Secret | Rhonda Byrne | Loi de l'Attraction | Développement Personnel",
+        "Arabic Book NEW | The Secret | Rhonda Byrne | Law of Attraction | Self-Help",
+        "Arabisches Buch NEU | Das Geheimnis | Rhonda Byrne | Anziehungsgesetz | Selbsthilfe",
+        "Libro Arabo NUOVO | Il Segreto | Rhonda Byrne | Legge di Attrazione | Crescita Personale"
+      ],
+      "description_file": "books/BOOK-035/description.txt",
+      "images_folder": "books/BOOK-035/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-036",
+      "name": "1984",
+      "isbn": "201708025X",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | 1984 George Orwell | Dystopie Classique Politique | Big Brother",
+        "Arabic Book NEW | 1984 Nineteen Eighty-Four | Dystopian Classic Political Fiction | Orwell",
+        "Arabisches Buch NEU | 1984 George Orwell | Dystopischer Klassiker | Big Brother",
+        "Libro Arabo NUOVO | 1984 George Orwell | Distopia Classico Politico | Big Brother"
+      ],
+      "description_file": "books/BOOK-036/description.txt",
+      "images_folder": "books/BOOK-036/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-037",
+      "name": "الرجال من المريخ والنساء من الزهرة",
+      "isbn": "0722538448",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les Hommes Viennent de Mars Les Femmes de Vénus  | Psychologie | John Gray",
+        "Arabic Book NEW | Men Are from Mars Women Are from Venus | Psychology | John Gray",
+        "Arabisches Buch NEU | Männer sind vom Mars Frauen von der Venus | Psychologie | John Gray",
+        "Libro Arabo NUOVO | Gli Uomini Vengono da Marte Le Donne da Venere | Comunicazione | John Gray"
+      ],
+      "description_file": "books/BOOK-037/description.txt",
+      "images_folder": "books/BOOK-037/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-038",
+      "name": "متعة أن تكون في العشرين",
+      "isbn": "9921768603",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Plaisir d'Avoir Vingt Ans | Développement Personnel Jeunesse | Ola Diab",
+        "Arabic Book NEW | The Joy of Being in Your Twenties | Self-Help Youth Guide | Ola Diab",
+        "Arabisches Buch NEU | Die Freude Zwanzig zu Sein | Selbsthilfe Jugend | Ola Diab",
+        "Libro Arabo NUOVO | Il Piacere di Avere Vent'anni | Auto-aiuto Giovani | Ola Diab"
+      ],
+      "description_file": "books/BOOK-038/description.txt",
+      "images_folder": "books/BOOK-038/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-039",
+      "name": "الأمير",
+      "isbn": "9789776541023",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Prince Machiavel | Philosophie Politique Classique Leadership | نيقولا مكيافيلي",
+        "Arabic Book NEW | The Prince Machiavelli | Political Philosophy Classic Leadership | Niccolò Machiavelli",
+        "Arabisches Buch NEU | Der Fürst Machiavelli | Politische Philosophie Klassiker Führung | Niccolò Machiavelli",
+        "Libro Arabo NUOVO | Il Principe Machiavelli | Filosofia Politica Classico Leadership | Niccolò Machiavelli"
+      ],
+      "description_file": "books/BOOK-039/description.txt",
+      "images_folder": "books/BOOK-039/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-040",
+      "name": "قوة عقلك الباطن",
+      "isbn": "9782761929431",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Le Pouvoir de Votre Subconscient | Joseph Murphy | Personnel | Psychologie",
+        "Arabic Book NEW | The Power of Your Subconscious Mind | Joseph Murphy | Self-Help | Mind Power",
+        "Arabisches Buch NEU | Die Macht Ihres Unterbewusstseins | Joseph Murphy | Selbsthilfe | Psychologie",
+        "Libro Arabo NUOVO | Il Potere del Subconscio | Joseph Murphy | Auto-Aiuto | Psicologia"
+      ],
+      "description_file": "books/BOOK-040/description.txt",
+      "images_folder": "books/BOOK-040/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-041",
+      "name": "ممتلئ بالفراغ",
+      "isbn": "9789778241693",
+      "category": "Psychology / Self-Help / Addiction Recovery",
+      "titles": [
+        "Livre Arabe NEUF | Rempli de Vide | Emad Rashad Othman | Psychologie | Addiction | Guérison",
+        "Arabic Book NEW | Filled with Emptiness | Emad Rashad Othman | Psychology | Addiction Recovery",
+        "Arabisches Buch NEU | Gefüllt mit Leere | Emad Rashad Othman | Psychologie | Sucht | Heilung",
+        "Libro Arabo NUOVO | Pieno di Vuoto | Emad Rashad Othman | Psicologia | Dipendenza | Guarigione"
+      ],
+      "description_file": "books/BOOK-041/description.txt",
+      "images_folder": "books/BOOK-041/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-042",
+      "name": "أنتيخريستوس",
+      "isbn": "9778515670",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Antéchrist | Thriller Historique Conspiration | Ahmed Khaled Mostafa",
+        "Arabic Book NEW | Antichrist | Historical Thriller Conspiracy | Ahmed Khaled Mostafa",
+        "Arabisches Buch NEU | Antichrist | Historischer Thriller Verschwörung | Ahmed Khaled Mostafa",
+        "Libro Arabo NUOVO | Anticristo | Thriller Storico Cospirazione | Ahmed Khaled Mostafa"
+      ],
+      "description_file": "books/BOOK-042/description.txt",
+      "images_folder": "books/BOOK-042/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-043",
+      "name": "إنني أتعفن رعباً",
+      "isbn": "9786038403945",
+      "category": "Fiction",
+      "titles": [
+        "Livre Arabe NEUF | Je Pourris de Terreur | Horreur Psychologique | Maryam Al-Hissi",
+        "Arabic Book NEW | I'm Rotting with Terror | Psychological Horror | Maryam Al-Hissi",
+        "Arabisches Buch NEU | Ich Verfaule vor Schrecken | Psychologischer Horror | Maryam Al-Hissi",
+        "Libro Arabo NUOVO | Sto Marcendo di Terrore | Horror Psicologico | Maryam Al-Hissi"
+      ],
+      "description_file": "books/BOOK-043/description.txt",
+      "images_folder": "books/BOOK-043/images",
+      "condition": [
+        "Très bon état"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-044",
+      "name": "قواعد السطوة: 48 قانوناً للقوة",
+      "isbn": "9775217245",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Les 48 Lois du Pouvoir Robert Greene | Stratégie Influence Leadership | Bestseller",
+        "Arabic Book NEW | The 48 Laws of Power Robert Greene | Strategy Influence Leadership | Bestseller",
+        "Arabisches Buch NEU | Die 48 Gesetze der Macht Robert Greene | Strategie Einfluss Führung | Bestseller",
+        "Libro Arabo NUOVO | Le 48 Leggi del Potere Robert Greene | Strategia Influenza Leadership | Bestseller"
+      ],
+      "description_file": "books/BOOK-044/description.txt",
+      "images_folder": "books/BOOK-044/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    },
+    {
+      "id": "BOOK-045",
+      "name": "جلسات نفسية: حتى تصل إلى السكينة النفسية",
+      "isbn": "9789776902190",
+      "category": "Non-fiction",
+      "titles": [
+        "Livre Arabe NEUF | Séances Psychologiques | Mental Health Self-Help | Bestseller",
+        "Arabic Book NEW | Psychological Sessions | Mental Health Personal Development | Bestseller",
+        "Arabisches Buch NEU | Psychologische Sitzungen | Mentale Gesundheit Selbsthilfe | Bestseller",
+        "Libro Arabo NUOVO | Sedute Psicologiche | Salute Mentale Sviluppo Personale | Bestseller"
+      ],
+      "description_file": "books/BOOK-045/description.txt",
+      "images_folder": "books/BOOK-045/images",
+      "condition": [
+        "Très bon état",
+        "Neuf sans étiquette"
+      ],
+      "package_size": "Petit",
+      "price": 15.99
+    }
+  ]
+}

@@ -4,9 +4,10 @@ Beautiful, reusable interface elements
 كتب مداد - مكونات الواجهة
 """
 
-import streamlit as st
 import base64
 from pathlib import Path
+
+import streamlit as st
 
 
 def image_to_base64(image_path: str) -> str:
@@ -52,7 +53,7 @@ def render_logo():
         # Display logo image
         st.image(
             str(logo_path),
-            use_container_width=True
+            width='stretch'
         )
         
         st.markdown("</div>", unsafe_allow_html=True)
@@ -208,7 +209,7 @@ def render_custom_navigation():
             st.page_link(
                 page['page'],
                 label=f"{page['icon']} {page['name']}",
-                use_container_width=True
+                width='stretch'
             )
     
     st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)

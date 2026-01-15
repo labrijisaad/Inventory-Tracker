@@ -1,15 +1,64 @@
 """
-Reset database with fresh data
+Reset database with fresh data from inventory.json
 Run: uv run python reset_db.py
 """
 
-from pathlib import Path
+import json
 from datetime import datetime, timedelta
+from pathlib import Path
+
 from sqlmodel import Session
-from src.data.database import Book, Sale, Customer, QuickMessage, get_engine, init_db, DB_PATH
+
+from src.data.database import DB_PATH, Book, Customer, QuickMessage, Sale, get_engine, init_db
+
+# Path to inventory.json in project root
+INVENTORY_JSON = Path(__file__).parent / "inventory.json"
+
+
+def load_books_from_inventory() -> list[Book]:
+    """Load books from inventory.json."""
+    
+    if not INVENTORY_JSON.exists():
+        print(f"❌ inventory.json not found at: {INVENTORY_JSON}")
+        print("📋 Please copy inventory.json to the root of this project")
+        return []
+    
+    print(f"📖 Reading inventory from: {INVENTORY_JSON}")
+    
+    with open(INVENTORY_JSON, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    books = []
+    for book_data in data.get('books', []):
+        # Map category to genre
+        category = book_data.get('category', 'Other')
+        genre_map = {
+            'Fiction': 'Fiction',
+            'Non-fiction': 'Non-fiction',
+            'Self-Help': 'Self-Help',
+            'Islamic Studies': 'Religion',
+        }
+        genre = genre_map.get(category, 'Other')
+        
+        # Create Book object
+        book = Book(
+            id=book_data['id'],                    # BOOK-001, BOOK-002...
+            title=book_data['name'],               # Arabic name
+            author="",                             # Empty (fill later in UI)
+            genre=genre,
+            buy_price=0.0,                         # Empty (fill later)
+            target_price=book_data.get('price', 15.99),  # Use Vinted price
+            stock=1,                               # Default stock
+            notes=f"ISBN: {book_data.get('isbn', 'N/A')}"
+        )
+        books.append(book)
+    
+    print(f"✅ Loaded {len(books)} books from inventory.json")
+    return books
+
 
 def reset_database():
-    """Delete and recreate database with mock data."""
+    """Delete and recreate database with data from inventory.json."""
     
     print("🗑️  Deleting old database...")
     if DB_PATH.exists():
@@ -19,13 +68,20 @@ def reset_database():
     print("\n📦 Creating fresh database...")
     init_db()
     
-    print("\n🎭 Adding mock data...")
+    print("\n🎭 Adding data from inventory.json...")
+    
+    # Load books from inventory.json
+    books = load_books_from_inventory()
+    
+    if not books:
+        print("\n❌ No books loaded! Aborting.")
+        return
     
     engine = get_engine()
     
     with Session(engine) as session:
         # ============================================================================
-        # 1. CREATE CUSTOMERS (Required for sales)
+        # 1. CREATE CUSTOMERS (Sample data)
         # ============================================================================
         customers = [
             Customer(
@@ -46,12 +102,6 @@ def reset_database():
                 platform_preference="Vinted",
                 notes="Bulk buyer"
             ),
-            Customer(
-                vinted_username="labriji",
-                name="Labriji",
-                platform_preference="Vinted",
-                notes="Bundle deals"
-            ),
         ]
         session.add_all(customers)
         session.commit()
@@ -60,234 +110,51 @@ def reset_database():
         print(f"   ✅ {len(customers)} customers created")
         
         # ============================================================================
-        # 2. CREATE BOOKS
+        # 2. CREATE BOOKS FROM INVENTORY.JSON
         # ============================================================================
-        books = [
-            # Active books (in stock)
-            Book(
-                title="ثلاثية غرناطة",
-                author="رضوى عاشور",
-                genre="Classic",
-                buy_price=8.0,
-                target_price=14.0,
-                stock=3,
-                notes="Popular trilogy"
-            ),
-            Book(
-                title="الأب الغني والأب الفقير",
-                author="روبرت كيوساكي",
-                genre="Self-Help",
-                buy_price=7.0,
-                target_price=15.0,
-                stock=2,
-                notes="Finance classic"
-            ),
-            Book(
-                title="مميز بالأصفر",
-                author="ماجد عبدالله",
-                genre="Self-Help",
-                buy_price=8.0,
-                target_price=16.0,
-                stock=5,
-                notes="Bestseller"
-            ),
-            Book(
-                title="1984",
-                author="George Orwell",
-                genre="Classic",
-                buy_price=6.0,
-                target_price=12.0,
-                stock=1,
-                notes="Last copy!"
-            ),
-            Book(
-                title="البؤساء",
-                author="Victor Hugo",
-                genre="Classic",
-                buy_price=10.0,
-                target_price=18.0,
-                stock=2,
-                notes="Les Misérables"
-            ),
-            Book(
-                title="فن اللامبالاة",
-                author="مارك مانسون",
-                genre="Self-Help",
-                buy_price=9.0,
-                target_price=17.0,
-                stock=4,
-                notes="The Subtle Art"
-            ),
-            
-            # Sold out books (stock = 0)
-            Book(
-                title="أرض زيكولا",
-                author="عمرو عبد الحميد",
-                genre="Fiction",
-                buy_price=7.0,
-                target_price=14.0,
-                stock=0,
-                notes="Sold out - popular"
-            ),
-            Book(
-                title="في قلبي أنثى عبرية",
-                author="خولة حمدي",
-                genre="Romance",
-                buy_price=6.0,
-                target_price=13.0,
-                stock=0,
-                notes="Sold out"
-            ),
-            Book(
-                title="أشياء جميلة",
-                author="محمد السالم",
-                genre="Self-Help",
-                buy_price=5.0,
-                target_price=11.0,
-                stock=0,
-                notes="Sold out"
-            ),
-            Book(
-                title="test saad",
-                author="Test Author",
-                genre="Other",
-                buy_price=5.0,
-                target_price=10.0,
-                stock=0,
-                notes="Test book"
-            ),
-            Book(
-                title="saad",
-                author="Saad",
-                genre="Other",
-                buy_price=4.5,
-                target_price=10.0,
-                stock=0,
-                notes="Test book 2"
-            ),
-        ]
         session.add_all(books)
         session.commit()
         for b in books:
             session.refresh(b)
-        print(f"   ✅ {len(books)} books created")
+        print(f"   ✅ {len(books)} books created from inventory.json")
         
         # ============================================================================
-        # 3. CREATE SALES (with proper dates in YYYY-MM-DD format)
+        # 3. CREATE SAMPLE SALES (Optional - for demo purposes)
         # ============================================================================
-        # Calculate dates relative to today
         today = datetime.now()
         
+        # Only create sales for first 3 books as example
         sales = [
-            # Sale 1: 10 days ago (outside weekly range)
             Sale(
-                book_id=books[6].id,  # أرض زيكولا
-                qty=2,
-                price=14.0,
+                book_id=books[0].id,  # First book
+                qty=1,
+                price=14.99,
                 packaging_per_book=1.0,
-                total=28.0,
-                customer_id=customers[0].id,  # Ahmed Mohamed
+                total=14.99,
+                customer_id=customers[0].id,
                 platform="Vinted",
-                date=(today - timedelta(days=10)).strftime("%Y-%m-%d"),
+                date=(today - timedelta(days=5)).strftime("%Y-%m-%d"),
                 bundle_id=None
             ),
-            
-            # Sale 2: 2 days ago (within weekly range)
             Sale(
-                book_id=books[7].id,  # في قلبي أنثى عبرية
-                qty=1,
-                price=13.0,
-                packaging_per_book=1.5,
-                total=13.0,
-                customer_id=customers[1].id,  # Sara Ali
-                platform="Instagram",
+                book_id=books[1].id,  # Second book
+                qty=2,
+                price=15.99,
+                packaging_per_book=1.0,
+                total=31.98,
+                customer_id=customers[1].id,
+                platform="Vinted",
                 date=(today - timedelta(days=2)).strftime("%Y-%m-%d"),
-                bundle_id=None
-            ),
-            
-            # Sale 3: 1 day ago (test saad)
-            Sale(
-                book_id=books[9].id,  # test saad
-                qty=9,
-                price=10.0,
-                packaging_per_book=1.0,
-                total=90.0,
-                customer_id=customers[2].id,  # Omar
-                platform="Vinted",
-                date=(today - timedelta(days=1)).strftime("%Y-%m-%d"),
-                bundle_id=None
-            ),
-            
-            # Bundle Sale: 1 day ago (2 books in bundle)
-            Sale(
-                book_id=books[8].id,  # أشياء جميلة
-                qty=3,
-                price=10.0,
-                packaging_per_book=1.0,
-                total=30.0,
-                customer_id=customers[3].id,  # Labriji
-                platform="Vinted",
-                date=(today - timedelta(days=1)).strftime("%Y-%m-%d"),
-                bundle_id="311b97"
-            ),
-            Sale(
-                book_id=books[10].id,  # saad
-                qty=2,
-                price=10.0,
-                packaging_per_book=1.0,
-                total=20.0,
-                customer_id=customers[3].id,  # Labriji
-                platform="Vinted",
-                date=(today - timedelta(days=1)).strftime("%Y-%m-%d"),
-                bundle_id="311b97"
-            ),
-            
-            # Sale 4: 1 day ago (saad - 10 books)
-            Sale(
-                book_id=books[10].id,  # saad
-                qty=10,
-                price=10.0,
-                packaging_per_book=1.0,
-                total=100.0,
-                customer_id=customers[2].id,  # Omar
-                platform="Vinted",
-                date=(today - timedelta(days=1)).strftime("%Y-%m-%d"),
-                bundle_id=None
-            ),
-            
-            # Sale 5: Today (أشياء جميلة)
-            Sale(
-                book_id=books[8].id,  # أشياء جميلة
-                qty=3,
-                price=8.33,
-                packaging_per_book=1.0,
-                total=25.0,
-                customer_id=customers[0].id,  # Ahmed
-                platform="Vinted",
-                date=today.strftime("%Y-%m-%d"),
-                bundle_id=None
-            ),
-            
-            # Sale 6: Today (البؤساء)
-            Sale(
-                book_id=books[4].id,  # البؤساء
-                qty=1,
-                price=18.0,
-                packaging_per_book=1.0,
-                total=18.0,
-                customer_id=customers[2].id,  # Test
-                platform="Vinted",
-                date=today.strftime("%Y-%m-%d"),
                 bundle_id=None
             ),
         ]
         
         session.add_all(sales)
         session.commit()
-        print(f"   ✅ {len(sales)} sales created")
+        print(f"   ✅ {len(sales)} sample sales created")
         
         # ============================================================================
-        # 4. CREATE DEFAULT QUICK MESSAGES (if not exists)
+        # 4. CREATE DEFAULT QUICK MESSAGES
         # ============================================================================
         from src.config import DEFAULT_QUICK_MESSAGES
         
@@ -305,28 +172,26 @@ def reset_database():
         # ============================================================================
         # SUMMARY
         # ============================================================================
-        active = [b for b in books if b.stock > 0]
-        sold = [b for b in books if b.stock == 0]
-        
         total_revenue = sum(s.total for s in sales)
-        total_profit = sum(
-            (s.total - (s.packaging_per_book * s.qty) - (session.get(Book, s.book_id).buy_price * s.qty))
-            for s in sales
-        )
         
         print(f"\n📊 Database Summary:")
-        print(f"   📚 Books: {len(books)} total")
-        print(f"      ├─ 🟢 Active: {len(active)}")
-        print(f"      └─ 🔴 Sold: {len(sold)}")
+        print(f"   📚 Books: {len(books)} total (from inventory.json)")
         print(f"   👥 Customers: {len(customers)}")
-        print(f"   💰 Sales: {len(sales)} transactions")
-        print(f"      ├─ Revenue: €{total_revenue:.2f}")
-        print(f"      └─ Profit: €{total_profit:.2f}")
+        print(f"   💰 Sales: {len(sales)} sample transactions")
+        print(f"      └─ Revenue: €{total_revenue:.2f}")
         print(f"   💬 Quick Messages: {len(DEFAULT_QUICK_MESSAGES)}")
     
     print("\n✅ Database reset complete!")
     print(f"📂 Location: {DB_PATH}")
-    print(f"\n🚀 Run: streamlit run app.py")
+    print(f"\n📝 Next Steps:")
+    print(f"   1. Run: streamlit run app.py")
+    print(f"   2. Go to Inventory tab")
+    print(f"   3. Fill in missing data:")
+    print(f"      - Author names")
+    print(f"      - Buy prices (what you paid)")
+    print(f"      - Adjust stock quantities")
+    print(f"\n🔄 To sync names back to Vinted bot:")
+    print(f"   python sync_names_to_vinted.py")
 
 
 if __name__ == "__main__":

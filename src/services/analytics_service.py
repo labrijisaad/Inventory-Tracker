@@ -172,7 +172,6 @@ def _render_timeline_chart(all_sales):
     # Aggregate by date with orders and books count
     sales_by_date = {}
     for s in all_sales:
-        # ✅ FIXED: Parse date properly
         try:
             date_str = s["date"]
             if '/' in date_str:
@@ -233,7 +232,7 @@ def _render_timeline_chart(all_sales):
         paper_bgcolor='rgba(0,0,0,0)',
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _render_best_sellers(all_sales):
@@ -304,15 +303,9 @@ def get_overview_stats() -> dict:
     # Get all sales
     all_sales = get_sales()
     
-    # ✅ Calculate date range (last 7 days from today)
+    # Calculate date range (last 7 days from today)
     today = datetime.now().date()
     week_ago = today - timedelta(days=7)
-    
-    # Debug logging
-    print(f"\n🔍 WEEKLY STATS DEBUG:")
-    print(f"   Today: {today}")
-    print(f"   Week ago: {week_ago}")
-    print(f"   Total sales in DB: {len(all_sales)}")
     
     weekly_sales = []
     
@@ -320,7 +313,7 @@ def get_overview_stats() -> dict:
         try:
             date_str = s['date']
             
-            # ✅ Parse different date formats
+            # Parse different date formats
             if '/' in date_str:
                 sale_date = datetime.strptime(date_str, "%d/%m/%Y").date()
             elif ' ' in date_str:
@@ -328,25 +321,17 @@ def get_overview_stats() -> dict:
             else:
                 sale_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             
-            # ✅ FIXED: Only count sales within last 7 days AND not in future
+            # Only count sales within last 7 days AND not in future
             in_range = week_ago <= sale_date <= today
-            
-            if sale_date > today:
-                print(f"   ⏭️  Sale {s['id']}: {date_str} → {sale_date} → FUTURE (excluded)")
-            else:
-                print(f"   {'✅' if in_range else '❌'} Sale {s['id']}: {date_str} → {sale_date} → {'IN RANGE' if in_range else 'TOO OLD'}")
             
             if in_range:
                 weekly_sales.append(s)
                 
-        except Exception as e:
-            print(f"   ⚠️ Date parse error for sale {s['id']}: {date_str} - {e}")
+        except Exception:
             continue
     
     # Calculate weekly revenue
     weekly_revenue = sum(s['total'] for s in weekly_sales)
-    
-    print(f"   📊 Result: {len(weekly_sales)} sales, €{weekly_revenue:.2f} revenue\n")
     
     return {
         'book_count': stats['book_count'],

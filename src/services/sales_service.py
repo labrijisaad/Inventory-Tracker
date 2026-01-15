@@ -5,21 +5,26 @@ Business logic for sales recording
 
 import time
 from datetime import datetime
+
 import pandas as pd
 import streamlit as st
 
-from src.data.database import get_books, get_sales, add_sale, add_bundle_sale, delete_sale
-from src.core.calculations import calculate_sale_profit, calculate_bundle_profit
-from src.ui.components import (
-    render_page_header, render_info_banner, render_section_header
-)
 from src.config import (
-    DEFAULT_PACKAGING_COST, PLATFORMS, MAX_SALES_HISTORY, 
-    DISPLAY_DATE_FORMAT, LOW_MARGIN_THRESHOLD, HIGH_MARGIN_THRESHOLD
+    DEFAULT_PACKAGING_COST,
+    DISPLAY_DATE_FORMAT,
+    HIGH_MARGIN_THRESHOLD,
+    LOW_MARGIN_THRESHOLD,
+    MAX_SALES_HISTORY,
+    PLATFORMS,
 )
+from src.core.calculations import calculate_bundle_profit, calculate_sale_profit
+from src.data.database import add_bundle_sale, add_sale, delete_sale, get_books, get_sales
+from src.ui.components import render_info_banner, render_page_header, render_section_header
 from src.utils.helpers import (
-    show_success_toast, show_error_toast, 
-    get_sales_by_date_range, group_sales_by_bundle
+    get_sales_by_date_range,
+    group_sales_by_bundle,
+    show_error_toast,
+    show_success_toast,
 )
 
 
@@ -63,13 +68,14 @@ def _render_sale_form(available_books: list[dict]):
     """Render sale input form."""
     render_section_header("Sale Details", "📝")
     
-    book_options = {f"{b['title']}": b for b in available_books}
-    selected_title = st.selectbox(
+    # ✅ NEW: Show ID + Title in dropdown
+    book_options = {f"{b['id']} - {b['title']}": b for b in available_books}
+    selected_display = st.selectbox(
         "📖 Select Book", 
         list(book_options.keys()),
         key="book_selector"
     )
-    selected_book = book_options[selected_title]
+    selected_book = book_options[selected_display]
     
     # Stock status
     if selected_book['stock'] > 3:
@@ -84,7 +90,6 @@ def _render_sale_form(available_books: list[dict]):
         f"💵 You paid: €{selected_book['buy_price']:.2f}\n\n"
         f"🎯 Target: €{selected_book['target_price']:.2f}" if selected_book['target_price'] > 0 else "🎯 No target"
     )
-    
     st.divider()
     
     # Date
@@ -201,7 +206,7 @@ def _render_sales_history():
         key="date_filter_single"
     )
     
-    # ✅ Filter by date range
+    # Filter by date range
     if date_filter == "Last 7 Days":
         sales = get_sales_by_date_range(7)
     elif date_filter == "Last 30 Days":
@@ -218,7 +223,7 @@ def _render_sales_history():
     for s in grouped_sales[:MAX_SALES_HISTORY]:
         profit_icon = "💚" if s['profit'] >= 0 else "💔"
         
-        # ✅ Parse and display date consistently
+        # Parse and display date consistently
         try:
             date_str = s["date"]
             
@@ -230,13 +235,18 @@ def _render_sales_history():
                 date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             
             date_display = date_obj.strftime("%d/%m/%Y")
-        except Exception as e:
-            print(f"⚠️ Date display error: {date_str} - {e}")
+        except Exception:
             date_display = date_str
         
-        # ✅ FIXED: Keep ID as string to avoid Arrow error
+        # Format sale ID as SE001, SE002, etc.
+        if s['type'] == 'bundle':
+            sale_id = s['id']  # Already formatted as "B-311b97"
+        else:
+            sale_id = f"SE{s['id']:03d}"  # SE001, SE002, etc.
+        
+        # Append to display list
         sales_display.append({
-            "ID": str(s["id"]),  # ✅ Convert to string
+            "ID": sale_id,
             "📅 Date": date_display,
             "📖 Book": s.get("book_title", "Bundle")[:30] if s['type'] == 'single' else "📦 Bundle",
             "Platform": s["platform"],
@@ -246,7 +256,8 @@ def _render_sales_history():
             "👤 Customer": s["customer"],
         })
     
-    st.dataframe(pd.DataFrame(sales_display), hide_index=True, use_container_width=True)
+    # Display dataframe (outside the loop!)
+    st.dataframe(pd.DataFrame(sales_display), hide_index=True, width='stretch')
     
     # Bundle details
     for s in grouped_sales[:MAX_SALES_HISTORY]:
@@ -278,9 +289,11 @@ def _render_delete_sale_section():
     with st.expander("🗑️ Undo Sale"):
         st.warning("⚠️ This will delete the sale and restore stock")
         
-        sale_id_input = st.text_input("Enter Sale ID or Bundle ID", 
-                                       placeholder="e.g., 4 or B-311b97",
-                                       key="delete_sale_id")
+        sale_id_input = st.text_input(
+            "Enter Sale ID or Bundle ID", 
+            placeholder="e.g., SE001 or B-311b97",  # ✅ Updated placeholder
+            key="delete_sale_id"
+        )
         
         if st.button("🗑️ Delete", type="secondary", key="delete_sale_btn"):
             if not sale_id_input:
@@ -289,8 +302,10 @@ def _render_delete_sale_section():
             
             if sale_id_input.startswith("B-"):
                 _delete_bundle(sale_id_input)
+            elif sale_id_input.startswith("SE"):  # ✅ NEW: Handle SE format
+                _delete_single_sale_with_prefix(sale_id_input)
             else:
-                _delete_single_sale(sale_id_input)
+                _delete_single_sale(sale_id_input)  # Fallback for numeric only
 
 
 def _delete_bundle(bundle_id_input: str):
@@ -338,6 +353,25 @@ def _delete_single_sale(sale_id_input: str):
         st.error("❌ Invalid ID format")
 
 
+def _delete_single_sale_with_prefix(sale_id_input: str):
+    """Delete a single sale using SE prefix format."""
+    try:
+        # Extract numeric part from SE001 → 1
+        numeric_id = int(sale_id_input.replace("SE", "").lstrip("0") or "0")
+        with st.spinner("Deleting..."):
+            success, msg = delete_sale(numeric_id)
+            if success:
+                show_success_toast("Sale deleted")
+                st.success(msg)
+                st.session_state.refresh_key += 1
+                time.sleep(1)
+                st.rerun()
+            else:
+                show_error_toast(msg)
+                st.error(msg)
+    except ValueError:
+        st.error("❌ Invalid sale ID format. Use SE001, SE002, etc.")
+
 def _render_bundle_sale_tab(available_books: list[dict]):
     """Render bundle sale tab."""
     render_section_header("Create Bundle Sale", "🎁")
@@ -345,7 +379,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
     
     selected_books = st.multiselect(
         "Select Books for Bundle (minimum 2)",
-        options=[f"{b['id']}: {b['title']}" for b in available_books],
+        options=[f"{b['id']}: {b['title']}" for b in available_books],  # Already correct!
         key="bundle_books"
     )
     
@@ -356,7 +390,8 @@ def _render_bundle_sale_tab(available_books: list[dict]):
             st.info("💡 Select 2 or more books to create a bundle sale")
         return
     
-    book_ids = [int(s.split(":")[0]) for s in selected_books]
+    # Extract string book IDs (BOOK-XXX format)
+    book_ids = [s.split(":")[0] for s in selected_books]
     selected_book_objs = [b for b in available_books if b['id'] in book_ids]
     
     st.divider()

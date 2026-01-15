@@ -4,14 +4,15 @@ Business logic for inventory management
 """
 
 import time
-import pandas as pd
-import streamlit as st
 from typing import Optional
 
-from src.data.database import get_books, save_books_bulk, get_stats
-from src.ui.components import render_page_header, render_info_banner
+import pandas as pd
+import streamlit as st
+
 from src.config import GENRES
-from src.utils.helpers import show_success_toast, show_error_toast
+from src.data.database import get_books, get_stats, save_books_bulk
+from src.ui.components import render_info_banner, render_page_header
+from src.utils.helpers import show_error_toast, show_success_toast
 
 
 def render_inventory_page():
@@ -81,14 +82,6 @@ def _render_inventory_table(status_filter: Optional[str], tab_key: str):
             "target_price", "stock", "status", "notes"
         ])
     else:
-        # Add stock alert icon
-        for book in books:
-            if book["stock"] > 0 and book["stock"] <= 2:
-                book["_stock_icon"] = "⚠️"
-            elif book["stock"] > 2:
-                book["_stock_icon"] = "✅"
-            else:
-                book["_stock_icon"] = "🔴"
         
         st.success(f"📊 Showing {len(books)} book(s)")
         df = pd.DataFrame(books)
@@ -138,23 +131,22 @@ def _get_column_config(status_filter: Optional[str]) -> tuple[dict, list]:
     """Get column configuration based on filter."""
     if status_filter == "active":
         column_config = {
-            "id": None,
+            "id": st.column_config.TextColumn("🆔 ID", width="small", disabled=True),
             "title": st.column_config.TextColumn("📖 Title", width="large", required=True),
             "author": st.column_config.TextColumn("✍️ Author", width="medium"),
             "genre": st.column_config.SelectboxColumn("📂 Genre", options=GENRES, width="small"),
             "buy_price": st.column_config.NumberColumn("💵 Buy €", format="%.2f", min_value=0, width="small"),
             "target_price": st.column_config.NumberColumn("🎯 Target €", format="%.2f", min_value=0, width="small"),
-            "_stock_icon": st.column_config.TextColumn("", width="small"),
             "stock": st.column_config.NumberColumn("📦 Stock", min_value=0, step=1, width="small"),
             "status": None,
             "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
             "created_at": None,
         }
-        column_order = ["title", "author", "genre", "buy_price", "target_price", "_stock_icon", "stock", "notes"]
+        column_order = ["id", "title", "author", "genre", "buy_price", "target_price", "stock", "notes"]
         
     elif status_filter == "sold":
         column_config = {
-            "id": None,
+            "id": st.column_config.TextColumn("🆔 ID", width="small", disabled=True),
             "title": st.column_config.TextColumn("📖 Title", width="large"),
             "author": st.column_config.TextColumn("✍️ Author", width="medium"),
             "genre": st.column_config.TextColumn("📂 Genre", width="small"),
@@ -164,24 +156,22 @@ def _get_column_config(status_filter: Optional[str]) -> tuple[dict, list]:
             "status": None,
             "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
             "created_at": None,
-            "_stock_icon": None,
         }
-        column_order = ["title", "author", "genre", "buy_price", "target_price", "notes"]
+        column_order = ["id", "title", "author", "genre", "buy_price", "target_price", "notes"]
         
     else:
         column_config = {
-            "id": st.column_config.NumberColumn("🆔 ID", disabled=True, width="small"),
+            "id": st.column_config.TextColumn("🆔 ID", disabled=True, width="small"),
             "title": st.column_config.TextColumn("📖 Title", width="large", required=True),
             "author": st.column_config.TextColumn("✍️ Author", width="medium"),
             "genre": st.column_config.SelectboxColumn("📂 Genre", options=GENRES, width="small"),
             "buy_price": st.column_config.NumberColumn("💵 Buy €", format="%.2f", min_value=0, width="small"),
             "target_price": st.column_config.NumberColumn("🎯 Target €", format="%.2f", min_value=0, width="small"),
-            "_stock_icon": st.column_config.TextColumn("", width="small"),
             "stock": st.column_config.NumberColumn("📦 Stock", min_value=0, step=1, width="small"),
             "status": st.column_config.TextColumn("📊 Status", width="small", disabled=True),
             "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
             "created_at": None,
         }
-        column_order = ["id", "title", "author", "genre", "buy_price", "target_price", "_stock_icon", "stock", "status", "notes"]
+        column_order = ["id", "title", "author", "genre", "buy_price", "target_price", "stock", "status", "notes"]
     
     return column_config, column_order
