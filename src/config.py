@@ -87,7 +87,7 @@ def load_default_messages() -> dict:
     """Load default quick messages from JSON file."""
     config_dir = Path(__file__).parent
     json_path = config_dir / "default_messages.json"
-    
+
     try:
         with open(json_path, "r", encoding="utf-8") as f:
             return json.load(f)

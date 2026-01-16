@@ -17,17 +17,17 @@ INVENTORY_JSON = Path(__file__).parent / "inventory.json"
 
 def load_books_from_inventory() -> list[Book]:
     """Load books from inventory.json."""
-    
+
     if not INVENTORY_JSON.exists():
         print(f"❌ inventory.json not found at: {INVENTORY_JSON}")
         print("📋 Please copy inventory.json to the root of this project")
         return []
-    
+
     print(f"📖 Reading inventory from: {INVENTORY_JSON}")
-    
+
     with open(INVENTORY_JSON, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    
+
     books = []
     for book_data in data.get('books', []):
         # Map category to genre
@@ -39,7 +39,7 @@ def load_books_from_inventory() -> list[Book]:
             'Islamic Studies': 'Religion',
         }
         genre = genre_map.get(category, 'Other')
-        
+
         # Create Book object
         book = Book(
             id=book_data['id'],                    # BOOK-001, BOOK-002...
@@ -52,33 +52,33 @@ def load_books_from_inventory() -> list[Book]:
             notes=f"ISBN: {book_data.get('isbn', 'N/A')}"
         )
         books.append(book)
-    
+
     print(f"✅ Loaded {len(books)} books from inventory.json")
     return books
 
 
 def reset_database():
     """Delete and recreate database with data from inventory.json."""
-    
+
     print("🗑️  Deleting old database...")
     if DB_PATH.exists():
         DB_PATH.unlink()
         print(f"   ✅ Deleted: {DB_PATH}")
-    
+
     print("\n📦 Creating fresh database...")
     init_db()
-    
+
     print("\n🎭 Adding data from inventory.json...")
-    
+
     # Load books from inventory.json
     books = load_books_from_inventory()
-    
+
     if not books:
         print("\n❌ No books loaded! Aborting.")
         return
-    
+
     engine = get_engine()
-    
+
     with Session(engine) as session:
         # ============================================================================
         # 1. CREATE CUSTOMERS (Sample data)
@@ -108,7 +108,7 @@ def reset_database():
         for c in customers:
             session.refresh(c)
         print(f"   ✅ {len(customers)} customers created")
-        
+
         # ============================================================================
         # 2. CREATE BOOKS FROM INVENTORY.JSON
         # ============================================================================
@@ -117,12 +117,12 @@ def reset_database():
         for b in books:
             session.refresh(b)
         print(f"   ✅ {len(books)} books created from inventory.json")
-        
+
         # ============================================================================
         # 3. CREATE SAMPLE SALES (Optional - for demo purposes)
         # ============================================================================
         today = datetime.now()
-        
+
         # Only create sales for first 3 books as example
         sales = [
             Sale(
@@ -148,16 +148,16 @@ def reset_database():
                 bundle_id=None
             ),
         ]
-        
+
         session.add_all(sales)
         session.commit()
         print(f"   ✅ {len(sales)} sample sales created")
-        
+
         # ============================================================================
         # 4. CREATE DEFAULT QUICK MESSAGES
         # ============================================================================
         from src.config import DEFAULT_QUICK_MESSAGES
-        
+
         for i, (key, msg) in enumerate(DEFAULT_QUICK_MESSAGES.items()):
             quick_msg = QuickMessage(
                 title=msg['title'],
@@ -168,30 +168,30 @@ def reset_database():
             session.add(quick_msg)
         session.commit()
         print(f"   ✅ {len(DEFAULT_QUICK_MESSAGES)} quick messages created")
-        
+
         # ============================================================================
         # SUMMARY
         # ============================================================================
         total_revenue = sum(s.total for s in sales)
-        
-        print(f"\n📊 Database Summary:")
+
+        print("\n📊 Database Summary:")
         print(f"   📚 Books: {len(books)} total (from inventory.json)")
         print(f"   👥 Customers: {len(customers)}")
         print(f"   💰 Sales: {len(sales)} sample transactions")
         print(f"      └─ Revenue: €{total_revenue:.2f}")
         print(f"   💬 Quick Messages: {len(DEFAULT_QUICK_MESSAGES)}")
-    
+
     print("\n✅ Database reset complete!")
     print(f"📂 Location: {DB_PATH}")
-    print(f"\n📝 Next Steps:")
-    print(f"   1. Run: streamlit run app.py")
-    print(f"   2. Go to Inventory tab")
-    print(f"   3. Fill in missing data:")
-    print(f"      - Author names")
-    print(f"      - Buy prices (what you paid)")
-    print(f"      - Adjust stock quantities")
-    print(f"\n🔄 To sync names back to Vinted bot:")
-    print(f"   python sync_names_to_vinted.py")
+    print("\n📝 Next Steps:")
+    print("   1. Run: streamlit run app.py")
+    print("   2. Go to Inventory tab")
+    print("   3. Fill in missing data:")
+    print("      - Author names")
+    print("      - Buy prices (what you paid)")
+    print("      - Adjust stock quantities")
+    print("\n🔄 To sync names back to Vinted bot:")
+    print("   python sync_names_to_vinted.py")
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ def render_logo():
     """Render logo from assets folder - SMALLER VERSION."""
     # Path to logo
     logo_path = Path(__file__).parent.parent.parent / "assets" / "logo.png"
-    
+
     # Check if logo exists
     if logo_path.exists():
         # Center the logo with REDUCED animation and glow
@@ -49,13 +49,13 @@ def render_logo():
             """,
             unsafe_allow_html=True
         )
-        
+
         # Display logo image
         st.image(
             str(logo_path),
             width='stretch'
         )
-        
+
         st.markdown("</div>", unsafe_allow_html=True)
     else:
         # Fallback to text logo if image not found
@@ -124,9 +124,9 @@ def render_custom_navigation():
         {"name": "Analytics", "icon": "📊", "page": "pages/03_analytics.py"},
         {"name": "Messages", "icon": "💬", "page": "pages/04_messages.py"},
     ]
-    
+
     current_page = st.session_state.get('current_page', 'Home')
-    
+
     # Custom CSS for navigation buttons
     st.markdown(
         """
@@ -169,10 +169,10 @@ def render_custom_navigation():
         """,
         unsafe_allow_html=True
     )
-    
+
     for page in pages:
         is_active = current_page == page['name']
-        
+
         if is_active:
             # Active page - show styled div WITHOUT bullet point
             st.markdown(
@@ -201,7 +201,7 @@ def render_custom_navigation():
                 label=f"{page['icon']} {page['name']}",
                 width='stretch'
             )
-    
+
     st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
 
 
@@ -219,8 +219,8 @@ def render_stats_card(stats: dict):
         """,
         unsafe_allow_html=True
     )
-    
-    # Row 1 - Books with REDUCED dark neon effect
+
+    # ✅ Row 1 - Books with CLEAR LABELS
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
@@ -239,17 +239,21 @@ def render_stats_card(stats: dict):
                             background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);"></div>
                 <div style="color: rgba(255,255,255,0.95); font-size: 9px; font-weight: 800; 
                             letter-spacing: 1px; margin-bottom: 8px; position: relative;">
-                    📚 ACTIVE
+                    📚 IN STOCK
                 </div>
                 <div style="color: white; font-size: 32px; font-weight: 900; line-height: 1; position: relative;
                             text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     {stats['active_count']}
                 </div>
+                <div style="color: rgba(255,255,255,0.75); font-size: 8px; font-weight: 600; 
+                            letter-spacing: 0.5px; margin-top: 6px; position: relative;">
+                    BOOKS
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    
+
     with col2:
         st.markdown(
             f"""
@@ -264,20 +268,24 @@ def render_stats_card(stats: dict):
                             background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);"></div>
                 <div style="color: rgba(255,255,255,0.95); font-size: 9px; font-weight: 800; 
                             letter-spacing: 1px; margin-bottom: 8px; position: relative;">
-                    ✅ SOLD
+                    ✅ SOLD OUT
                 </div>
                 <div style="color: white; font-size: 32px; font-weight: 900; line-height: 1; position: relative;
                             text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     {stats['sold_count']}
                 </div>
+                <div style="color: rgba(255,255,255,0.75); font-size: 8px; font-weight: 600; 
+                            letter-spacing: 0.5px; margin-top: 6px; position: relative;">
+                    BOOKS
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    
+
     st.markdown("<div style='margin: 14px 0;'></div>", unsafe_allow_html=True)
-    
-    # Row 2 - Financial
+
+    # ✅ Row 2 - Financial with ALL-TIME label
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
@@ -299,11 +307,15 @@ def render_stats_card(stats: dict):
                             text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     €{stats['revenue']:.0f}
                 </div>
+                <div style="color: rgba(255,255,255,0.75); font-size: 8px; font-weight: 600; 
+                            letter-spacing: 0.5px; margin-top: 6px; position: relative;">
+                    ALL-TIME
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    
+
     with col2:
         st.markdown(
             f"""
@@ -324,11 +336,15 @@ def render_stats_card(stats: dict):
                             text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);">
                     €{stats['profit']:.0f}
                 </div>
+                <div style="color: rgba(255,255,255,0.75); font-size: 8px; font-weight: 600; 
+                            letter-spacing: 0.5px; margin-top: 6px; position: relative;">
+                    ALL-TIME
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    
+
     # Stock summary with REDUCED dark glassmorphism glow
     st.markdown(
         f"""
@@ -377,9 +393,9 @@ def render_page_header(title: str, subtitle: str, icon: str = "📚"):
 
 
 def render_alerts(low_stock: list, recent_sales: list, week_range: str):
-    """Render alerts section with better design."""
+    """Render alerts section with better design and PROPER WEEK RANGE."""
     st.markdown("<div style='margin: 20px 0 15px 0;'></div>", unsafe_allow_html=True)
-    
+
     st.markdown(
         """
         <h3 style="color: #495057; font-size: 14px; font-weight: 600; margin: 0 0 10px 0; 
@@ -389,7 +405,7 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
         """,
         unsafe_allow_html=True
     )
-    
+
     if low_stock:
         st.markdown(
             f"""
@@ -439,8 +455,12 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
             """,
             unsafe_allow_html=True,
         )
-    
+
+    # ✅ FIXED: Show TRANSACTIONS count, not individual sale records
     if recent_sales:
+        # Calculate total items (for additional context)
+        total_items = sum(s['qty'] for s in recent_sales)
+
         st.markdown(
             f"""
             <div style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); 
@@ -448,10 +468,10 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
                         border-left: 3px solid #17a2b8; margin-top: 8px;
                         box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);">
                 <p style="margin: 0; color: #0c5460; font-size: 12px; font-weight: 600;">
-                    🔥 {len(recent_sales)} book(s) sold this week
+                    🔥 {len(recent_sales)} transaction(s) this week
                 </p>
                 <p style="margin: 3px 0 0 0; color: #0c5460; font-size: 10px;">
-                    {week_range}
+                    📦 {total_items} books sold • 📅 {week_range}
                 </p>
             </div>
             """,
@@ -481,9 +501,9 @@ def render_info_banner(message: str, type: str = "info"):
         "warning": {"bg": "linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%)", "border": "#ffc107", "text": "#856404", "icon": "⚠️"},
         "error": {"bg": "linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%)", "border": "#dc3545", "text": "#842029", "icon": "❌"},
     }
-    
+
     style = colors.get(type, colors["info"])
-    
+
     st.markdown(
         f"""
         <div style="background: {style['bg']}; 
@@ -515,13 +535,40 @@ def render_section_header(title: str, icon: str = "📋"):
 
 
 def load_custom_css():
-    """Load custom CSS for enhanced styling with modern colors."""
+    """Load custom CSS for enhanced styling with modern colors and DARK MODE METRICS FIX."""
     st.markdown(
         """
         <style>
         /* Hide Streamlit branding */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
+        
+        /* ✅ FIX: Force metrics to be visible in dark mode */
+        [data-testid="stMetric"] {
+            background-color: transparent !important;
+        }
+        
+        [data-testid="stMetricLabel"] {
+            color: #e5e7eb !important;  /* Light gray text */
+            font-weight: 600 !important;
+            font-size: 14px !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            color: #ffffff !important;  /* Pure white for numbers */
+            font-size: 28px !important;
+            font-weight: 700 !important;
+        }
+        
+        [data-testid="stMetricDelta"] {
+            color: #d1d5db !important;  /* Light gray for delta */
+            font-size: 14px !important;
+        }
+        
+        /* Delta arrows colors */
+        [data-testid="stMetricDelta"] svg {
+            fill: currentColor !important;
+        }
         
         /* Sidebar improvements */
         [data-testid="stSidebar"] {
@@ -556,11 +603,16 @@ def load_custom_css():
             background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
         }
         
-        /* Better data editor */
+        /* Better data editor - make it visible in dark mode */
         .stDataFrame {
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        /* Force dataframe text to be visible */
+        .stDataFrame [data-testid="stDataFrameResizable"] {
+            color: #e5e7eb !important;
         }
         
         /* Smooth animations */
@@ -588,8 +640,13 @@ def load_custom_css():
             border-radius: 8px 8px 0 0;
             padding: 10px 18px;
             font-weight: 600;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+            color: #e5e7eb;
             font-size: 14px;
+        }
+        
+        .stTabs [data-baseweb="tab"]:hover {
+            background: linear-gradient(135deg, #4a4a4a 0%, #3d3d3d 100%);
         }
         
         .stTabs [data-baseweb="tab"][aria-selected="true"] {
@@ -597,10 +654,12 @@ def load_custom_css():
             color: white;
         }
         
-        /* Better selectbox */
+        /* Better selectbox - dark mode */
         .stSelectbox > div > div {
             border-radius: 8px;
-            border: 2px solid #e9ecef;
+            border: 2px solid #4a4a4a;
+            background-color: #2d2d2d;
+            color: #e5e7eb;
             transition: border 0.3s ease;
         }
         
@@ -609,77 +668,83 @@ def load_custom_css():
             border-color: #667eea;
         }
         
-        /* Better number input */
+        /* Better number input - dark mode */
         .stNumberInput > div > div > input {
             border-radius: 8px;
-            border: 2px solid #e9ecef;
+            border: 2px solid #4a4a4a;
+            background-color: #2d2d2d;
+            color: #e5e7eb;
             transition: border 0.3s ease;
         }
         
         .stNumberInput > div > div > input:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         
-        /* Better text input */
+        /* Better text input - dark mode */
         .stTextInput > div > div > input,
         .stTextArea > div > div > textarea {
             border-radius: 8px;
-            border: 2px solid #e9ecef;
+            border: 2px solid #4a4a4a;
+            background-color: #2d2d2d;
+            color: #e5e7eb;
             transition: border 0.3s ease;
         }
         
         .stTextInput > div > div > input:focus,
         .stTextArea > div > div > textarea:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         
-        /* Better metrics */
-        [data-testid="stMetricValue"] {
-            font-size: 26px;
-            font-weight: 700;
-            color: #212529;
-        }
-        
-        /* Better expander */
+        /* Better expander - dark mode */
         .streamlit-expanderHeader {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
             border-radius: 8px;
             font-weight: 600;
             padding: 12px;
+            color: #e5e7eb;
         }
         
-        /* Success messages */
+        .streamlit-expanderHeader:hover {
+            background: linear-gradient(135deg, #4a4a4a 0%, #3d3d3d 100%);
+        }
+        
+        /* Success messages - darker for dark mode */
         .stSuccess {
-            background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%);
-            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, rgba(67, 233, 123, 0.2) 0%, rgba(56, 249, 215, 0.2) 100%);
+            border-left: 4px solid #43e97b;
             border-radius: 8px;
             padding: 12px;
+            color: #43e97b;
         }
         
-        /* Error messages */
+        /* Error messages - darker for dark mode */
         .stError {
-            background: linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%);
-            border-left: 4px solid #dc3545;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(238, 90, 111, 0.2) 100%);
+            border-left: 4px solid #ff6b6b;
             border-radius: 8px;
             padding: 12px;
+            color: #ff6b6b;
         }
         
-        /* Warning messages */
+        /* Warning messages - darker for dark mode */
         .stWarning {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
             border-left: 4px solid #ffc107;
             border-radius: 8px;
             padding: 12px;
+            color: #ffc107;
         }
         
-        /* Info messages */
+        /* Info messages - darker for dark mode */
         .stInfo {
-            background: linear-gradient(135deg, #cfe2ff 0%, #c5d9f5 100%);
-            border-left: 4px solid #0d6efd;
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
+            border-left: 4px solid #4facfe;
             border-radius: 8px;
             padding: 12px;
+            color: #4facfe;
         }
         
         /* Better spacing */
@@ -691,6 +756,27 @@ def load_custom_css():
         /* Compact sidebar */
         [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
             margin-bottom: 0.5rem;
+        }
+        
+        /* Fix caption text in dark mode */
+        .stCaptionContainer {
+            color: #9ca3af !important;
+        }
+        
+        /* Fix all text to be visible */
+        p, span, div {
+            color: inherit;
+        }
+        
+        /* Force dataframe headers to be visible */
+        .stDataFrame thead tr th {
+            color: #e5e7eb !important;
+            background-color: #2d2d2d !important;
+        }
+        
+        /* Force dataframe cells to be visible */
+        .stDataFrame tbody tr td {
+            color: #e5e7eb !important;
         }
         </style>
         """,

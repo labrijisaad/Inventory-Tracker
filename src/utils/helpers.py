@@ -25,17 +25,17 @@ def show_info_toast(message: str):
 def get_sales_by_date_range(days: int) -> list[dict]:
     """Get sales within last N days (excluding future dates)."""
     from src.data.database import get_sales
-    
+
     today = datetime.now().date()
     start_date = today - timedelta(days=days)
-    
+
     all_sales = get_sales()
     filtered = []
-    
+
     for s in all_sales:
         try:
             date_str = s['date']
-            
+
             # Parse different date formats
             if '/' in date_str:
                 sale_date = datetime.strptime(date_str, "%d/%m/%Y").date()
@@ -43,21 +43,21 @@ def get_sales_by_date_range(days: int) -> list[dict]:
                 sale_date = datetime.strptime(date_str.split()[0], "%Y-%m-%d").date()
             else:
                 sale_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            
+
             # Only include sales within range AND not in future
             if start_date <= sale_date <= today:
                 filtered.append(s)
-                
+
         except Exception:
             continue
-    
+
     return filtered
 
 
 def get_low_stock_books(threshold: int = 2) -> list[dict]:
     """Get books with stock below threshold."""
     from src.data.database import get_books
-    
+
     books = get_books("active")
     return [b for b in books if 0 < b["stock"] <= threshold]
 
@@ -76,21 +76,21 @@ def format_percentage(value: float) -> str:
 def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
     """Group sales by bundle_id and calculate profits."""
     from src.data.database import get_books
-    
+
     if not sales:
         return []
-    
+
     # Get all books for profit calculation
     all_books = get_books()
     books_dict = {b['id']: b for b in all_books}
-    
+
     # Group by bundle
     bundles = {}
     singles = []
-    
+
     for sale in sales:
         bundle_id = sale.get('bundle_id')
-        
+
         if bundle_id:
             if bundle_id not in bundles:
                 bundles[bundle_id] = {
@@ -106,7 +106,7 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
                     'bundle_details': [],
                     'bundle_id': bundle_id
                 }
-            
+
             # Calculate profit for this sale item
             book = books_dict.get(sale['book_id'])
             if book:
@@ -115,7 +115,7 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
                 profit = revenue - cost
             else:
                 profit = 0
-            
+
             bundles[bundle_id]['total'] += sale['total']
             bundles[bundle_id]['qty'] += sale['qty']
             bundles[bundle_id]['profit'] += profit
@@ -131,7 +131,7 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
                 profit = revenue - cost
             else:
                 profit = 0
-            
+
             singles.append({
                 'id': sale['id'],
                 'type': 'single',
@@ -145,10 +145,10 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
                 'profit': profit,
                 'bundle_details': None
             })
-    
+
     # Combine and sort by date (newest first)
     result = list(bundles.values()) + singles
-    
+
     # ✅ FIXED: Sort with proper date parsing
     def parse_sale_date(sale):
         try:
@@ -161,9 +161,9 @@ def group_sales_by_bundle(sales: list[dict]) -> list[dict]:
                 return datetime.strptime(date_str, "%Y-%m-%d")
         except:
             return datetime.min
-    
+
     result.sort(key=parse_sale_date, reverse=True)
-    
+
     return result
 
 

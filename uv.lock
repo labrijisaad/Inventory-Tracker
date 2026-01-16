@@ -399,6 +399,7 @@ dependencies = [
     { name = "altair" },
     { name = "pandas" },
     { name = "plotly" },
+    { name = "ruff" },
     { name = "sqlmodel" },
     { name = "streamlit" },
 ]
@@ -415,6 +416,7 @@ requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "plotly", specifier = ">=5.18.0" },
+    { name = "ruff", specifier = ">=0.14.10" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "sqlmodel", specifier = ">=0.0.31" },
     { name = "streamlit", specifier = ">=1.28.0" },

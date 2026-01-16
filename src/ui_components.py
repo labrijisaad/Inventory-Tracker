@@ -159,7 +159,7 @@ def render_stats_card(stats: dict):
         """,
         unsafe_allow_html=True
     )
-    
+
     # Row 1 - Books with dark neon effect
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -189,7 +189,7 @@ def render_stats_card(stats: dict):
             """,
             unsafe_allow_html=True,
         )
-    
+
     with col2:
         st.markdown(
             f"""
@@ -214,9 +214,9 @@ def render_stats_card(stats: dict):
             """,
             unsafe_allow_html=True,
         )
-    
+
     st.sidebar.markdown("<div style='margin: 14px 0;'></div>", unsafe_allow_html=True)
-    
+
     # Row 2 - Financial
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -243,7 +243,7 @@ def render_stats_card(stats: dict):
             """,
             unsafe_allow_html=True,
         )
-    
+
     with col2:
         st.markdown(
             f"""
@@ -268,7 +268,7 @@ def render_stats_card(stats: dict):
             """,
             unsafe_allow_html=True,
         )
-    
+
     # Stock summary with dark glassmorphism
     st.sidebar.markdown(
         f"""
@@ -319,7 +319,7 @@ def render_page_header(title: str, subtitle: str, icon: str = "📚"):
 def render_alerts(low_stock: list, recent_sales: list, week_range: str):
     """Render alerts section with better design."""
     st.sidebar.markdown("<div style='margin: 20px 0 15px 0;'></div>", unsafe_allow_html=True)
-    
+
     st.sidebar.markdown(
         """
         <h3 style="color: #495057; font-size: 14px; font-weight: 600; margin: 0 0 10px 0; 
@@ -329,7 +329,7 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
         """,
         unsafe_allow_html=True
     )
-    
+
     if low_stock:
         st.sidebar.markdown(
             f"""
@@ -361,7 +361,7 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
             """,
             unsafe_allow_html=True,
         )
-    
+
     if recent_sales:
         st.sidebar.markdown(
             f"""
@@ -404,9 +404,9 @@ def render_info_banner(message: str, type: str = "info"):
         "warning": {"bg": "linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%)", "border": "#ffc107", "text": "#856404", "icon": "⚠️"},
         "error": {"bg": "linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%)", "border": "#dc3545", "text": "#842029", "icon": "❌"},
     }
-    
+
     style = colors.get(type, colors["info"])
-    
+
     st.markdown(
         f"""
         <div style="background: {style['bg']}; 

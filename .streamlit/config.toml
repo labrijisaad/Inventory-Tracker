@@ -10,3 +10,11 @@ headless = true
 
 [browser]
 gatherUsageStats = false
+
+# ✅ NEW: Sidebar Configuration
+[client]
+showSidebarNavigation = true
+
+[ui]
+hideTopBar = false
+hideSidebarNav = false
