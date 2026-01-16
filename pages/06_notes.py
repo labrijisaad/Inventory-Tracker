@@ -174,7 +174,8 @@ if filtered_notes:
                 elif len(files) == 1:
                     file_badge = " | 📎 1 file"
 
-                st.caption(f"📅 {date_display} | Note **#{note['id']}**{file_badge}")
+                st.markdown(f"📅 `{date_display}`")
+                st.markdown(f"💮 Note **`N°{note['id']}`**{file_badge}")
 
             with col2:
                 if files:
