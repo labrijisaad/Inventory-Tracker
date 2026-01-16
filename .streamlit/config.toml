@@ -6,15 +6,39 @@ textColor = "#e5e7eb"
 font = "sans serif"
 
 [server]
+# Port
+port = 8501
+
+# Address: localhost for dev, 0.0.0.0 for production (VM)
+# Will be overridden by command-line flag in production
+address = "localhost"
+
+# Headless mode (don't auto-open browser)
 headless = true
 
+# CORS & Security (fixed conflict)
+enableCORS = true
+enableXsrfProtection = true
+
+# Max upload size
+maxUploadSize = 200
+
 [browser]
+# Don't collect usage stats
 gatherUsageStats = false
 
-# ✅ NEW: Sidebar Configuration
+# Server address for browser
+serverAddress = "localhost"
+serverPort = 8501
+
 [client]
 showSidebarNavigation = true
+showErrorDetails = true
+toolbarMode = "minimal"
 
-[ui]
-hideTopBar = false
-hideSidebarNav = false
+[runner]
+fastReruns = true
+magicEnabled = true
+
+[logger]
+level = "INFO"

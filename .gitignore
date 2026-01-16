@@ -33,19 +33,29 @@ ENV/
 *.swo
 *~
 
-# Streamlit
+# Streamlit secrets
 .streamlit/secrets.toml
 
-# Database
-data/*.db
+# ❌ BLOCK temporary SQLite files only
 data/*.db-journal
+data/*.db-shm
+data/*.db-wal
+
+# Backups folder (created on VM)
+backups/
+*.backup
+
+# Logs
+*.log
+logs/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-
 # Cache
 .cache/
+
+# Environment variables
+.env
+.env.local

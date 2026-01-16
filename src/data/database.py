@@ -13,9 +13,26 @@ from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, sele
 
 from src.config import load_default_messages
 
-# Database path
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
-DB_PATH = DATA_DIR / "midad.db"
+# ============================================================================
+# ENVIRONMENT-AWARE DATABASE PATH
+# ============================================================================
+
+import os
+
+# Detect environment and set database path
+if os.getenv('PRODUCTION') == 'true':
+    # Production: Use separate data directory on VM
+    DB_PATH = Path('/opt/midad-data/midad.db')
+    print("🚀 Running in PRODUCTION mode")
+else:
+    # Development: Use local data folder
+    DATA_DIR = Path(__file__).parent.parent.parent / "data"
+    DB_PATH = DATA_DIR / "midad.db"
+    print("💻 Running in DEVELOPMENT mode")
+
+# Ensure directory exists
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+print(f"📂 Database path: {DB_PATH}")
 
 # ============================================================================
 # ✅ CRITICAL FIX: Clear metadata BEFORE defining models

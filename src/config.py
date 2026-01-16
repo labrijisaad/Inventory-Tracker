@@ -26,33 +26,8 @@ PLATFORMS = [
 
 # Genres
 GENRES = [
-    "Fiction - General",
-    "Fiction - Historical",
-    "Fiction - Contemporary",
-    "Fiction - Science Fiction",
-    "Fiction - Fantasy",
-    "Fiction - Mystery/Thriller",
-    "Fiction - Romance",
-    "Fiction - Horror",
-    "Self-Help & Personal Development",
-    "Psychology",
-    "Philosophy",
-    "Religion & Spirituality",
-    "Islamic Studies",
-    "Biography & Memoir",
-    "History",
-    "Politics & Society",
-    "Business & Economics",
-    "Science & Nature",
-    "Arabic Classics",
-    "Poetry - Classical",
-    "Poetry - Modern",
-    "Children's Books",
-    "Young Adult",
-    "Art & Photography",
-    "Cooking",
-    "Travel",
-    "Education & Reference",
+    "Fiction",
+    "Non-fiction",
     "Other"
 ]
 

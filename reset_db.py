@@ -1,161 +1,217 @@
 """
-Reset database with fresh data from inventory.json
-Run: uv run python reset_db.py
+Reset/Initialize database with data from inventory.json
+Works in both development and production environments
+Automatically detects environment and database location
 """
 
 import json
-from datetime import datetime, timedelta
+import os
 from pathlib import Path
 
 from sqlmodel import Session
 
-from src.data.database import DB_PATH, Book, Customer, QuickMessage, Sale, get_engine, init_db
+from src.data.database import DB_PATH, Book, Customer, QuickMessage, get_engine, init_db
 
-# Path to inventory.json in project root
+# Path to inventory.json
 INVENTORY_JSON = Path(__file__).parent / "inventory.json"
+
+# Detect environment
+IS_PRODUCTION = os.getenv('PRODUCTION') == 'true'
+
+# Defaults
+DEFAULT_BUY_PRICE = 2.50  # €2.50
+
+
+def confirm_reset():
+    """Ask for confirmation before resetting database."""
+
+    if DB_PATH.exists():
+        db_size = DB_PATH.stat().st_size / (1024 * 1024)  # MB
+
+        print(f"\n{'='*60}")
+        print(f"📂 Database: {DB_PATH}")
+        print(f"📦 Size: {db_size:.2f} MB")
+        print(f"🌍 Environment: {'PRODUCTION ⚠️' if IS_PRODUCTION else 'DEVELOPMENT'}")
+        print(f"{'='*60}\n")
+
+        if IS_PRODUCTION:
+            print("🚨 WARNING: You are in PRODUCTION mode!")
+            print("   This will DELETE all real customer data!")
+            print("   Are you ABSOLUTELY sure?\n")
+            response = input("   Type 'YES DELETE PRODUCTION' to confirm: ")
+            return response == "YES DELETE PRODUCTION"
+        else:
+            response = input("Delete existing database and recreate? (yes/no): ")
+            return response.lower() == 'yes'
+
+    # No database exists, safe to create
+    return True
+
+
+def map_genre(category: str, genre_field: str = None) -> str:
+    """
+    Map inventory.json category/genre to database genre.
+    
+    Simplified genres: Fiction, Non-fiction, Other
+    
+    Priority:
+    1. Use 'genre' field if present
+    2. Map 'category' field if genre missing
+    3. Default to 'Other'
+    """
+
+    # If explicit genre field provided, use it
+    if genre_field:
+        genre_normalized = genre_field.strip().lower()
+        if 'fiction' in genre_normalized and 'non' not in genre_normalized:
+            return 'Fiction'
+        elif 'non-fiction' in genre_normalized or 'nonfiction' in genre_normalized:
+            return 'Non-fiction'
+        else:
+            return genre_field.strip()  # Use as-is if already simple
+
+    # Otherwise, map from category
+    category_lower = category.lower()
+
+    # Fiction categories
+    fiction_keywords = ['fiction', 'novel', 'romance', 'thriller', 'mystery', 'fantasy', 'sci-fi']
+    if any(keyword in category_lower for keyword in fiction_keywords):
+        if 'non' not in category_lower:  # Avoid "non-fiction"
+            return 'Fiction'
+
+    # Non-fiction categories
+    nonfiction_keywords = [
+        'non-fiction', 'nonfiction', 'self-help', 'psychology', 'biography',
+        'history', 'philosophy', 'religion', 'islamic', 'business',
+        'science', 'education', 'development'
+    ]
+    if any(keyword in category_lower for keyword in nonfiction_keywords):
+        return 'Non-fiction'
+
+    # Default
+    return 'Other'
 
 
 def load_books_from_inventory() -> list[Book]:
     """Load books from inventory.json."""
 
     if not INVENTORY_JSON.exists():
-        print(f"❌ inventory.json not found at: {INVENTORY_JSON}")
-        print("📋 Please copy inventory.json to the root of this project")
+        print(f"\n❌ inventory.json not found at: {INVENTORY_JSON}")
+        print("📋 Please ensure inventory.json is in the project root")
         return []
 
     print(f"📖 Reading inventory from: {INVENTORY_JSON}")
 
-    with open(INVENTORY_JSON, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    try:
+        with open(INVENTORY_JSON, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"❌ Error reading inventory.json: {e}")
+        return []
 
     books = []
+    stats = {'fiction': 0, 'non_fiction': 0, 'other': 0}
+
     for book_data in data.get('books', []):
-        # Map category to genre
+        # Get genre (with fallback to category)
         category = book_data.get('category', 'Other')
-        genre_map = {
-            'Fiction': 'Fiction',
-            'Non-fiction': 'Non-fiction',
-            'Self-Help': 'Self-Help',
-            'Islamic Studies': 'Religion',
-        }
-        genre = genre_map.get(category, 'Other')
+        genre_field = book_data.get('genre', None)
+        genre = map_genre(category, genre_field)
+
+        # Track stats
+        if genre == 'Fiction':
+            stats['fiction'] += 1
+        elif genre == 'Non-fiction':
+            stats['non_fiction'] += 1
+        else:
+            stats['other'] += 1
+
+        # Get buy price (default to €2.50)
+        buy_price = book_data.get('buy_price', DEFAULT_BUY_PRICE)
+
+        # Get stock (default to 1)
+        stock = book_data.get('stock', 1)
 
         # Create Book object
         book = Book(
-            id=book_data['id'],                    # BOOK-001, BOOK-002...
-            title=book_data['name'],               # Arabic name
-            author="",                             # Empty (fill later in UI)
+            id=book_data['id'],
+            title=book_data['name'],
+            author=book_data.get('author', ''),
             genre=genre,
-            buy_price=0.0,                         # Empty (fill later)
-            target_price=book_data.get('price', 15.99),  # Use Vinted price
-            stock=1,                               # Default stock
+            buy_price=buy_price,
+            target_price=book_data.get('price', 15.99),
+            stock=stock,
             notes=f"ISBN: {book_data.get('isbn', 'N/A')}"
         )
         books.append(book)
 
     print(f"✅ Loaded {len(books)} books from inventory.json")
+    print(f"   📖 Fiction: {stats['fiction']}")
+    print(f"   📚 Non-fiction: {stats['non_fiction']}")
+    print(f"   📦 Other: {stats['other']}\n")
+
     return books
 
 
 def reset_database():
     """Delete and recreate database with data from inventory.json."""
 
-    print("🗑️  Deleting old database...")
+    # Show banner
+    print("\n" + "="*60)
+    print(" 🗄️  MIDAD BOOKS - DATABASE RESET")
+    print("="*60)
+
+    # Confirm reset
+    if not confirm_reset():
+        print("\n❌ Database reset cancelled\n")
+        return
+
+    # Delete old database
+    print("\n🗑️  Deleting old database...")
     if DB_PATH.exists():
         DB_PATH.unlink()
         print(f"   ✅ Deleted: {DB_PATH}")
 
+    # Create new database
     print("\n📦 Creating fresh database...")
     init_db()
-
-    print("\n🎭 Adding data from inventory.json...")
+    print("   ✅ Tables created")
 
     # Load books from inventory.json
+    print("\n📚 Loading books from inventory.json...")
     books = load_books_from_inventory()
 
     if not books:
-        print("\n❌ No books loaded! Aborting.")
-        return
+        print("\n⚠️  WARNING: No books loaded!")
+        print("   Database will be empty (only default messages)")
+        response = input("\nContinue anyway? (yes/no): ")
+        if response.lower() != 'yes':
+            print("\n❌ Aborted\n")
+            return
 
+    # Populate database
     engine = get_engine()
 
     with Session(engine) as session:
-        # ============================================================================
-        # 1. CREATE CUSTOMERS (Sample data)
-        # ============================================================================
-        customers = [
-            Customer(
-                vinted_username="ahmed_m",
-                name="Ahmed Mohamed",
+        # Add books
+        if books:
+            session.add_all(books)
+            session.commit()
+            print(f"   ✅ Added {len(books)} books")
+
+        # Add sample customer (only in dev mode)
+        if not IS_PRODUCTION:
+            sample_customer = Customer(
+                vinted_username="test_user",
+                name="Test Customer",
                 platform_preference="Vinted",
-                notes="Regular customer"
-            ),
-            Customer(
-                vinted_username="sara_ali",
-                name="Sara Ali",
-                platform_preference="Instagram",
-                notes="Prefers Instagram"
-            ),
-            Customer(
-                vinted_username="omar_h",
-                name="Omar Hassan",
-                platform_preference="Vinted",
-                notes="Bulk buyer"
-            ),
-        ]
-        session.add_all(customers)
-        session.commit()
-        for c in customers:
-            session.refresh(c)
-        print(f"   ✅ {len(customers)} customers created")
+                notes="Sample customer for testing"
+            )
+            session.add(sample_customer)
+            session.commit()
+            print("   ✅ Added sample customer")
 
-        # ============================================================================
-        # 2. CREATE BOOKS FROM INVENTORY.JSON
-        # ============================================================================
-        session.add_all(books)
-        session.commit()
-        for b in books:
-            session.refresh(b)
-        print(f"   ✅ {len(books)} books created from inventory.json")
-
-        # ============================================================================
-        # 3. CREATE SAMPLE SALES (Optional - for demo purposes)
-        # ============================================================================
-        today = datetime.now()
-
-        # Only create sales for first 3 books as example
-        sales = [
-            Sale(
-                book_id=books[0].id,  # First book
-                qty=1,
-                price=14.99,
-                packaging_per_book=1.0,
-                total=14.99,
-                customer_id=customers[0].id,
-                platform="Vinted",
-                date=(today - timedelta(days=5)).strftime("%Y-%m-%d"),
-                bundle_id=None
-            ),
-            Sale(
-                book_id=books[1].id,  # Second book
-                qty=2,
-                price=15.99,
-                packaging_per_book=1.0,
-                total=31.98,
-                customer_id=customers[1].id,
-                platform="Vinted",
-                date=(today - timedelta(days=2)).strftime("%Y-%m-%d"),
-                bundle_id=None
-            ),
-        ]
-
-        session.add_all(sales)
-        session.commit()
-        print(f"   ✅ {len(sales)} sample sales created")
-
-        # ============================================================================
-        # 4. CREATE DEFAULT QUICK MESSAGES
-        # ============================================================================
+        # Add default quick messages
         from src.config import DEFAULT_QUICK_MESSAGES
 
         for i, (key, msg) in enumerate(DEFAULT_QUICK_MESSAGES.items()):
@@ -167,32 +223,40 @@ def reset_database():
             )
             session.add(quick_msg)
         session.commit()
-        print(f"   ✅ {len(DEFAULT_QUICK_MESSAGES)} quick messages created")
+        print(f"   ✅ Added {len(DEFAULT_QUICK_MESSAGES)} quick messages")
 
-        # ============================================================================
-        # SUMMARY
-        # ============================================================================
-        total_revenue = sum(s.total for s in sales)
+    # Success message
+    print("\n" + "="*60)
+    print("✅ DATABASE RESET COMPLETE!")
+    print("="*60)
+    print(f"\n📂 Location: {DB_PATH}")
+    print(f"📊 Books: {len(books)}")
+    print(f"💰 Default buy price: €{DEFAULT_BUY_PRICE:.2f}")
 
-        print("\n📊 Database Summary:")
-        print(f"   📚 Books: {len(books)} total (from inventory.json)")
-        print(f"   👥 Customers: {len(customers)}")
-        print(f"   💰 Sales: {len(sales)} sample transactions")
-        print(f"      └─ Revenue: €{total_revenue:.2f}")
-        print(f"   💬 Quick Messages: {len(DEFAULT_QUICK_MESSAGES)}")
+    if IS_PRODUCTION:
+        print("\n🚨 PRODUCTION DATABASE INITIALIZED")
+        print("   Next steps:")
+        print("   1. Review data in the app")
+        print("   2. Commit to git: git add data/midad.db && git commit -m 'db: reset'")
+        print("   3. Push to GitHub: git push origin main")
+    else:
+        print("\n📝 Next steps:")
+        print("   1. Run: uv run streamlit run app.py")
+        print("   2. Go to Inventory tab")
+        print("   3. Fill in missing data:")
+        print("      - Authors (if not in inventory.json)")
+        print("      - Buy prices (default: €2.50)")
+        print("      - Stock quantities")
 
-    print("\n✅ Database reset complete!")
-    print(f"📂 Location: {DB_PATH}")
-    print("\n📝 Next Steps:")
-    print("   1. Run: streamlit run app.py")
-    print("   2. Go to Inventory tab")
-    print("   3. Fill in missing data:")
-    print("      - Author names")
-    print("      - Buy prices (what you paid)")
-    print("      - Adjust stock quantities")
-    print("\n🔄 To sync names back to Vinted bot:")
-    print("   python sync_names_to_vinted.py")
+    print()
 
 
 if __name__ == "__main__":
-    reset_database()
+    try:
+        reset_database()
+    except KeyboardInterrupt:
+        print("\n\n❌ Interrupted by user\n")
+    except Exception as e:
+        print(f"\n\n❌ Error: {e}\n")
+        import traceback
+        traceback.print_exc()
