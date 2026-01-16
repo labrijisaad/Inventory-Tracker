@@ -106,7 +106,7 @@ def _render_sale_form(available_books: list[dict]):
     # Date
     sale_date = st.date_input("📅 Date", value=datetime.now(), key="sale_date")
     sale_datetime_str = sale_date.strftime('%Y-%m-%d')
-    st.caption(f"📅 {sale_date.strftime('%d/%m/%Y')}")
+    st.caption(f"📅 `{sale_date.strftime('%d/%m/%Y')}`")
 
     st.divider()
 

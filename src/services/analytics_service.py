@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.data.database import get_books, get_customers, get_sales, get_stats
+from src.data.database import get_books, get_sales, get_stats
 from src.ui.components import render_page_header, render_section_header
 from src.utils.helpers import get_low_stock_books, group_sales_by_bundle
 
@@ -18,7 +18,7 @@ from src.utils.helpers import get_low_stock_books, group_sales_by_bundle
 def render_analytics_page():
     """Main analytics dashboard with comprehensive insights."""
     render_page_header(
-        "📊 Business Intelligence Dashboard",
+        "Business Intelligence Dashboard",
         "Comprehensive insights into your sales performance, inventory health, and growth metrics"
     )
 
@@ -26,7 +26,6 @@ def render_analytics_page():
     stats = get_stats()
     all_sales = get_sales()
     all_books = get_books()
-    all_customers = get_customers()
     grouped_sales = group_sales_by_bundle(all_sales)
 
     # Calculate core metrics
@@ -93,9 +92,19 @@ def _calculate_core_metrics(grouped_sales, stats):
     this_week_revenue = sum(s["total"] for s in this_week_sales)
     last_week_revenue = sum(s["total"] for s in last_week_sales)
 
-    revenue_growth = 0
-    if last_week_revenue > 0:
+    # ✅ FIXED: Handle zero division properly
+    if last_week_revenue == 0 and this_week_revenue == 0:
+        revenue_growth = 0
+        revenue_growth_text = "No sales"
+    elif last_week_revenue == 0 and this_week_revenue > 0:
+        revenue_growth = None  # Infinite growth
+        revenue_growth_text = "NEW 🎉"
+    elif this_week_revenue == 0 and last_week_revenue > 0:
+        revenue_growth = -100
+        revenue_growth_text = "-100%"
+    else:
         revenue_growth = ((this_week_revenue - last_week_revenue) / last_week_revenue) * 100
+        revenue_growth_text = f"{revenue_growth:+.1f}%"
 
     return {
         'total_revenue': total_revenue,
@@ -110,6 +119,7 @@ def _calculate_core_metrics(grouped_sales, stats):
         'this_week_revenue': this_week_revenue,
         'last_week_revenue': last_week_revenue,
         'revenue_growth': revenue_growth,
+        'revenue_growth_text': revenue_growth_text,  # ✅ New field
         'inventory_value': stats['stock_value'],
         'potential_revenue': stats['potential_revenue'],
     }
@@ -137,7 +147,16 @@ def _render_hero_metrics(metrics):
     col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
-        growth_icon = "📈" if metrics['revenue_growth'] >= 0 else "📉"
+        if metrics['revenue_growth'] is None or metrics['revenue_growth_text'] == "NEW 🎉":
+            growth_icon = "🎉"
+            growth_text = metrics['revenue_growth_text']
+        elif metrics['revenue_growth'] >= 0:
+            growth_icon = "📈"
+            growth_text = f"{metrics['revenue_growth']:+.1f}% vs last week"
+        else:
+            growth_icon = "📉"
+            growth_text = f"{metrics['revenue_growth']:.1f}% vs last week"
+
         st.markdown(
             f"""
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
@@ -147,7 +166,7 @@ def _render_hero_metrics(metrics):
                 <p style="margin: 8px 0; font-size: 11px; opacity: 0.9; font-weight: 600; letter-spacing: 1px;">TOTAL REVENUE</p>
                 <h2 style="margin: 5px 0; font-size: 24px; font-weight: 700;">€{metrics['total_revenue']:.2f}</h2>
                 <p style="margin: 8px 0 0 0; font-size: 11px; opacity: 0.85; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px; display: inline-block;">
-                    {growth_icon} {metrics['revenue_growth']:+.1f}% vs last week
+                    {growth_icon} {growth_text}
                 </p>
             </div>
             """,
@@ -236,7 +255,7 @@ def _render_financial_overview(metrics, stats):
         st.metric(
             "📦 Inventory Value",
             f"€{metrics['inventory_value']:.2f}",
-            help="Total cost of current stock"
+            help="Total cost of current stock (no packaging)"
         )
 
     with col2:
@@ -566,8 +585,8 @@ def _render_inventory_health(stats, all_books):
     with col1:
         st.metric("📚 Total Books", stats['book_count'])
     with col2:
-        st.metric("✅ Active", stats['active_count'],
-                 delta=f"{stats['active_count']/stats['book_count']*100:.0f}%")
+        st.metric("✅ Active", stats['active_count'])
+        st.caption(f"{stats['active_count']/stats['book_count']*100:.0f}% of total inventory")
     with col3:
         st.metric("🔴 Sold Out", stats['sold_count'])
     with col4:
@@ -729,7 +748,7 @@ def _render_profit_analysis(grouped_sales, all_books):
 
             with col1:
                 st.markdown(f"**{icon} #{i} {title}**")
-                st.caption(f"{display_date} • {s.get('platform', 'Unknown')}")
+                st.caption(f"`{display_date}` • {s.get('platform', 'Unknown')}")
 
             with col2:
                 st.metric("Profit", f"€{s['profit']:.2f}", label_visibility="collapsed")

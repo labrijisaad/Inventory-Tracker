@@ -525,7 +525,7 @@ def render_section_header(title: str, icon: str = "📋"):
     """Render section header with modern styling."""
     st.markdown(
         f"""
-        <h3 style="color: #495057; margin: 20px 0 12px 0; font-size: 20px; font-weight: 600;
+        <h3 style="color: #7963be; margin: 20px 0 12px 0; font-size: 20px; font-weight: 600;
                    border-bottom: 2px solid #e9ecef; padding-bottom: 6px;">
             {icon} {title}
         </h3>
@@ -539,11 +539,44 @@ def load_custom_css():
     st.markdown(
         """
         <style>
-        /* Hide Streamlit branding */
+        /* ============================================
+           HIDE STREAMLIT BRANDING
+           ============================================ */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* ✅ DARK SIDEBAR (instead of light) */
+        
+        /* ============================================
+           SIDEBAR - PREVENT COLLAPSE
+           ============================================ */
+        
+        /* Hide the collapse button completely */
+        [data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        /* Force sidebar to always be visible */
+        [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        /* Lock sidebar width */
+        section[data-testid="stSidebar"] {
+            width: 21rem !important;
+            min-width: 21rem !important;
+        }
+        
+        /* Prevent sidebar collapse animation */
+        [data-testid="stSidebar"][aria-expanded="false"] {
+            display: block !important;
+            margin-left: 0 !important;
+        }
+        
+        
+        /* ============================================
+           DARK SIDEBAR STYLING
+           ============================================ */
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #2d2d2d 0%, #1e1e1e 100%) !important;
         }
@@ -552,6 +585,7 @@ def load_custom_css():
             padding-top: 1rem;
         }
         
+        /* ... rest of your existing CSS continues here ... */
         /* ✅ FIX: Style page_link properly for dark sidebar */
         .stPageLink {
             margin-bottom: 8px;

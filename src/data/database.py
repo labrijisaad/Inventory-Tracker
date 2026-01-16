@@ -17,33 +17,47 @@ from src.config import load_default_messages
 # ENVIRONMENT-AWARE DATABASE PATH
 # ============================================================================
 
-# Simple: same database path everywhere (git-tracked)
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DB_PATH = DATA_DIR / "midad.db"
-
-# Ensure directory exists
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+# ============================================================================
+# ✅ AGGRESSIVE METADATA CLEARING (before model definitions!)
+# ============================================================================
 try:
-    # Try to clear existing metadata/mappings
     if hasattr(SQLModel, 'metadata'):
         SQLModel.metadata.clear()
 
-    # Also clear the registry if it exists
     if hasattr(SQLModel, 'registry'):
+        registry = SQLModel.registry
+
+        # Clear internal registries
+        if hasattr(registry, '_class_registry'):
+            registry._class_registry.clear()
+        if hasattr(registry, 'mappers'):
+            registry.mappers.clear()
+
+        # Dispose
         try:
-            SQLModel.registry.dispose()
+            registry.dispose()
         except:
             pass
-except Exception as e:
-    print(f"⚠️ Metadata clear warning (safe to ignore): {e}")
+
+    # Force garbage collection
+    import gc
+    gc.collect()
+
+except Exception:
+    pass  # Safe to ignore - means no registry existed yet
 
 
 # ============================================================================
-# MODELS
+# MODELS (with explicit table names to avoid conflicts)
 # ============================================================================
+
 class Customer(SQLModel, table=True):
     """Customer database."""
+    __tablename__ = "customer"
     __table_args__ = {"extend_existing": True}
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -53,11 +67,15 @@ class Customer(SQLModel, table=True):
     notes: str = ""
     created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
 
-    sales: list["Sale"] = Relationship(back_populates="customer_rel")
+    sales: list["Sale"] = Relationship(
+        back_populates="customer_rel",
+        sa_relationship_kwargs={"lazy": "select"}
+    )
 
 
 class Book(SQLModel, table=True):
     """Book in inventory."""
+    __tablename__ = "book"
     __table_args__ = {"extend_existing": True}
 
     id: str = Field(primary_key=True)
@@ -70,7 +88,10 @@ class Book(SQLModel, table=True):
     created_at: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     notes: str = ""
 
-    sales: list["Sale"] = Relationship(back_populates="book")
+    sales: list["Sale"] = Relationship(
+        back_populates="book",
+        sa_relationship_kwargs={"lazy": "select"}
+    )
 
     @property
     def status(self) -> str:
@@ -83,6 +104,7 @@ class Book(SQLModel, table=True):
 
 class Sale(SQLModel, table=True):
     """Sale record."""
+    __tablename__ = "sale"
     __table_args__ = {"extend_existing": True}
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -95,14 +117,21 @@ class Sale(SQLModel, table=True):
     bundle_id: Optional[str] = Field(default=None, index=True)
 
     book_id: Optional[str] = Field(default=None, foreign_key="book.id")
-    book: Optional[Book] = Relationship(back_populates="sales")
-
     customer_id: int = Field(foreign_key="customer.id")
-    customer_rel: Customer = Relationship(back_populates="sales")
+
+    book: Optional["Book"] = Relationship(
+        back_populates="sales",
+        sa_relationship_kwargs={"lazy": "select"}
+    )
+    customer_rel: "Customer" = Relationship(
+        back_populates="sales",
+        sa_relationship_kwargs={"lazy": "select"}
+    )
 
 
 class QuickMessage(SQLModel, table=True):
     """Quick message templates."""
+    __tablename__ = "quickmessage"
     __table_args__ = {"extend_existing": True}
 
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -130,18 +159,15 @@ def get_engine():
 
 def init_db():
     """Create tables and initialize default messages (only once per session)."""
-    # ✅ Use Streamlit session state to track initialization
     import streamlit as st
 
     if 'db_initialized' in st.session_state and st.session_state['db_initialized']:
-        return  # Already initialized in this session
+        return
 
     engine = get_engine()
-
-    # Create all tables
     SQLModel.metadata.create_all(engine)
 
-    # Initialize default messages if empty
+    # Initialize default messages
     try:
         with Session(engine) as session:
             existing = session.exec(select(QuickMessage)).first()
@@ -159,9 +185,7 @@ def init_db():
     except Exception as e:
         print(f"⚠️ Warning: Could not initialize default messages: {e}")
 
-    # Mark as initialized
     st.session_state['db_initialized'] = True
-
 
 # ============================================================================
 # HELPER: STANDARDIZE DATE FORMAT

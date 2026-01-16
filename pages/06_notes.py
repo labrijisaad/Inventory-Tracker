@@ -6,7 +6,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from src.data.notes_manager import add_note, delete_note, get_file_path, load_notes
+from src.data.notes_manager import add_note, delete_note, get_file_path, load_notes, update_note
 from src.ui.components import render_page_header
 from src.ui.sidebar import render_sidebar
 from src.ui.styles import load_custom_css
@@ -39,6 +39,8 @@ if 'confirm_delete' not in st.session_state:
     st.session_state.confirm_delete = None
 if 'search_query' not in st.session_state:
     st.session_state.search_query = ""
+if 'editing_note_id' not in st.session_state:
+    st.session_state.editing_note_id = None
 
 # ============================================================================
 # PROCESS DELETION
@@ -78,15 +80,32 @@ with col3:
 st.markdown("---")
 
 # ============================================================================
-# ADD NEW NOTE
+# ✅ SHOW SUCCESS MESSAGES (after page reloads)
 # ============================================================================
-with st.expander("➕ Add New Note", expanded=False):
-    with st.form("add_note", clear_on_submit=False):  # ✅ Never auto-clear
+if st.session_state.get('show_balloons', False):
+    st.balloons()
+    st.session_state['show_balloons'] = False
+
+if st.session_state.get('show_success', False):
+    st.success("✅ Note added successfully!")
+    st.session_state['show_success'] = False
+
+# ============================================================================
+# ADD NEW NOTE - ✅ STAYS OPEN ON ERRORS
+# ============================================================================
+
+# ✅ Track if we should keep expander open
+if 'keep_form_open' not in st.session_state:
+    st.session_state.keep_form_open = False
+
+# ✅ Dynamic expanded state
+with st.expander("➕ Add New Note", expanded=st.session_state.keep_form_open):
+    with st.form("add_note", clear_on_submit=False):
         note_title = st.text_input(
             "Title *",
             placeholder="e.g., Customer Request, Draft Message, Book Idea...",
             help="Short descriptive title",
-            key="form_title"
+            key="add_title"
         )
 
         note_content = st.text_area(
@@ -94,36 +113,54 @@ with st.expander("➕ Add New Note", expanded=False):
             placeholder="Write your note here... (Markdown supported)",
             height=150,
             help="Main note content. You can use **bold**, *italic*, etc.",
-            key="form_content"
+            key="add_content"
         )
 
         uploaded_files = st.file_uploader(
             "📎 Attach Files (optional)",
             type=['jpg', 'jpeg', 'png', 'pdf', 'txt', 'doc', 'docx', 'xlsx'],
             help="Upload one or more files. Single images show as preview.",
-            accept_multiple_files=True
+            accept_multiple_files=True,
+            key="add_files"
         )
 
-        submit = st.form_submit_button("✅ Add Note", width='stretch', type="primary")
+        submit = st.form_submit_button("✅ Add Note", type="primary", width='stretch')
 
         if submit:
             errors = []
             if not note_title.strip():
-                errors.append("Title is required")
+                errors.append("❌ Title is required")
             if not note_content.strip():
-                errors.append("Content is required")
+                errors.append("❌ Content is required")
 
             if errors:
-                # ✅ SHOW ERRORS BUT DON'T CLEAR FORM
+                # ❌ ERRORS - Keep expander open, show errors, DON'T refresh
+                st.session_state.keep_form_open = True  # ✅ Stay open!
+
                 for error in errors:
-                    st.error(f"❌ {error}")
+                    st.error(error)
+
+                # ❌ DON'T call st.rerun() - Form stays as is!
+
             else:
-                # ✅ SUCCESS - ADD NOTE BUT DON'T CLEAR FORM!
+                # ✅ SUCCESS - Add note and refresh
                 add_note(note_title, note_content, uploaded_files)
-                st.success("✅ Note added! Form kept for quick entry.")
-                # ✅ DON'T DELETE SESSION STATE - Keep the text!
-                # User can manually clear if they want
+
+                # Clear form manually
+                for key in ['add_title', 'add_content', 'add_files']:
+                    if key in st.session_state:
+                        del st.session_state[key]
+
+                # ✅ Close expander for next time
+                st.session_state.keep_form_open = False
+
+                # Set success flags
+                st.session_state['show_balloons'] = True
+                st.session_state['show_success'] = True
+
+                # 🔄 Refresh page
                 st.rerun()
+
 st.markdown("---")
 
 # ============================================================================
@@ -140,7 +177,7 @@ else:
     filtered_notes = notes_sorted
 
 # ============================================================================
-# DISPLAY NOTES - CARD STYLE
+# DISPLAY NOTES - CARD STYLE WITH EDIT
 # ============================================================================
 if filtered_notes:
     for note in filtered_notes:
@@ -161,124 +198,171 @@ if filtered_notes:
 
         # ============ NOTE CARD ============
         with st.container(border=True):
-            # Header with date and actions
-            col1, col2, col3 = st.columns([4, 1, 1])
+            # ✅ EDIT MODE
+            if st.session_state.editing_note_id == note['id']:
+                st.markdown("### ✏️ Editing Note")
 
-            with col1:
-                date_str = datetime.strptime(note['date'], "%Y-%m-%d %H:%M:%S")
-                date_display = date_str.strftime("%d/%m/%Y %H:%M")
+                with st.form(f"edit_note_{note['id']}"):
+                    edit_title = st.text_input(
+                        "Title *",
+                        value=note.get('title', ''),
+                        key=f"edit_title_{note['id']}"
+                    )
 
-                file_badge = ""
-                if len(files) > 1:
-                    file_badge = f" | 📎 {len(files)} files"
-                elif len(files) == 1:
-                    file_badge = " | 📎 1 file"
+                    edit_content = st.text_area(
+                        "Content *",
+                        value=note.get('content', ''),
+                        height=150,
+                        key=f"edit_content_{note['id']}"
+                    )
 
-                st.markdown(f"📅 `{date_display}`")
-                st.markdown(f"💮 Note **`N°{note['id']}`**{file_badge}")
+                    st.caption("📎 Current files: " + ", ".join(files) if files else "No files")
 
-            with col2:
-                if files:
-                    file_path = get_file_path(files[0])
-                    if file_path.exists():
-                        with open(file_path, "rb") as f:
-                            st.download_button(
-                                "Download",
-                                f,
-                                file_name=files[0],
-                                key=f"download_{note['id']}"
-                            )
+                    new_files = st.file_uploader(
+                        "Add/Replace Files (optional)",
+                        type=['jpg', 'jpeg', 'png', 'pdf', 'txt', 'doc', 'docx', 'xlsx'],
+                        accept_multiple_files=True,
+                        key=f"edit_files_{note['id']}",
+                        help="Leave empty to keep current files, or upload new files to replace"
+                    )
 
-            with col3:
-                if st.session_state.confirm_delete == note['id']:
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        if st.button("Delete", key=f"confirm_{note['id']}", type="primary"):
-                            st.session_state.note_to_delete = note['id']
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        save_edit = st.form_submit_button("💾 Save Changes", type="primary", width='stretch')
+
+                    with col2:
+                        cancel_edit = st.form_submit_button("❌ Cancel", width='stretch')
+
+                    if save_edit:
+                        if not edit_title.strip() or not edit_content.strip():
+                            st.error("❌ Title and content are required")
+                        else:
+                            # Update note
+                            update_note(note['id'], edit_title, edit_content, new_files)
+                            st.session_state.editing_note_id = None
+
+                            # ✅ Set flags for balloons
+                            st.session_state['show_balloons'] = True
+                            st.session_state['show_success_edit'] = True
                             st.rerun()
-                    with col_b:
-                        if st.button("Keep", key=f"cancel_{note['id']}"):
-                            st.session_state.confirm_delete = None
-                            st.rerun()
-                else:
-                    if st.button("Delete", key=f"delete_{note['id']}"):
-                        st.session_state.confirm_delete = note['id']
+
+                    if cancel_edit:
+                        st.session_state.editing_note_id = None
                         st.rerun()
 
-            st.markdown("---")
+            # ✅ VIEW MODE
+            else:
+                # Header with date and actions
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
 
-            # ============ CONTENT LAYOUT ============
-            if show_image:
-                # ✅ TWO COLUMNS: Content + Image
-                col_content, col_image = st.columns([2, 1])
+                with col1:
+                    date_str = datetime.strptime(note['date'], "%Y-%m-%d %H:%M:%S")
+                    date_display = date_str.strftime("%d/%m/%Y %H:%M")
 
-                with col_content:
-                    # Title
+                    file_badge = ""
+                    if len(files) > 1:
+                        file_badge = f" | 📎 {len(files)} files"
+                    elif len(files) == 1:
+                        file_badge = " | 📎 1 file"
+
+                    st.markdown(f"📅 `{date_display}`")
+                    st.markdown(f"💮 Note **`N°{note['id']}`**{file_badge}")
+
+                with col2:
+                    if files:
+                        file_path = get_file_path(files[0])
+                        if file_path.exists():
+                            with open(file_path, "rb") as f:
+                                st.download_button(
+                                    "📥",
+                                    f,
+                                    file_name=files[0],
+                                    key=f"download_{note['id']}",
+                                    width='stretch'
+                                )
+
+                with col3:
+                    if st.button("✏️", key=f"edit_{note['id']}", width='stretch', help="Edit note"):
+                        st.session_state.editing_note_id = note['id']
+                        st.rerun()
+
+                with col4:
+                    if st.session_state.confirm_delete == note['id']:
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            if st.button("✅", key=f"confirm_{note['id']}", help="Confirm"):
+                                st.session_state.note_to_delete = note['id']
+                                st.rerun()
+                        with col_b:
+                            if st.button("❌", key=f"cancel_{note['id']}", help="Cancel"):
+                                st.session_state.confirm_delete = None
+                                st.rerun()
+                    else:
+                        if st.button("🗑️", key=f"delete_{note['id']}", width='stretch', help="Delete"):
+                            st.session_state.confirm_delete = note['id']
+                            st.rerun()
+
+                st.markdown("---")
+
+                # ============ CONTENT LAYOUT ============
+                if show_image:
+                    col_content, col_image = st.columns([2, 1])
+
+                    with col_content:
+                        st.markdown(f"### 📌 {note.get('title', 'Untitled')}")
+                        st.markdown("")
+                        st.markdown(note.get('content', ''))
+
+                    with col_image:
+                        st.markdown(
+                            """
+                            <div style="
+                                border: 2px solid #e0e0e0;
+                                border-radius: 8px;
+                                padding: 8px;
+                                background: #f9f9f9;
+                            ">
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        st.image(str(image_path), width='stretch')
+                        st.markdown("</div>", unsafe_allow_html=True)
+                        st.caption(f"📷 {files[0]}")
+
+                else:
                     st.markdown(f"### 📌 {note.get('title', 'Untitled')}")
                     st.markdown("")
-                    # Content
                     st.markdown(note.get('content', ''))
 
-                with col_image:
-                    # ✅ IMAGE CARD with border
-                    st.markdown(
-                        """
-                        <div style="
-                            border: 2px solid #e0e0e0;
-                            border-radius: 8px;
-                            padding: 8px;
-                            background: #f9f9f9;
-                        ">
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    # ✅ Show image with container width
-                    st.image(
-                        str(image_path),
-                        width='stretch'
-                    )
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    st.caption(f"📷 {files[0]}")
+                    if files:
+                        st.markdown("")
+                        st.markdown("**📎 Attached Files:**")
 
-            else:
-                # ✅ FULL WIDTH: No image or multiple files
-                # Title
-                st.markdown(f"### 📌 {note.get('title', 'Untitled')}")
-                st.markdown("")
-                # Content
-                st.markdown(note.get('content', ''))
+                        for idx, filename in enumerate(files, 1):
+                            file_path = get_file_path(filename)
+                            if file_path.exists():
+                                file_ext = file_path.suffix.lower()
+                                icon_map = {
+                                    '.pdf': '📄',
+                                    '.doc': '📝', '.docx': '📝',
+                                    '.txt': '📃',
+                                    '.xlsx': '📊', '.xls': '📊',
+                                    '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🖼️'
+                                }
+                                icon = icon_map.get(file_ext, '📎')
 
-                # ✅ SHOW FILES LIST
-                if files:
-                    st.markdown("")
-                    st.markdown("**📎 Attached Files:**")
-
-                    for idx, filename in enumerate(files, 1):
-                        file_path = get_file_path(filename)
-                        if file_path.exists():
-                            # File icon
-                            file_ext = file_path.suffix.lower()
-                            icon_map = {
-                                '.pdf': '📄',
-                                '.doc': '📝', '.docx': '📝',
-                                '.txt': '📃',
-                                '.xlsx': '📊', '.xls': '📊',
-                                '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🖼️'
-                            }
-                            icon = icon_map.get(file_ext, '📎')
-
-                            # File row
-                            col_file, col_btn = st.columns([4, 1])
-                            with col_file:
-                                st.markdown(f"{icon} `{filename}`")
-                            with col_btn:
-                                with open(file_path, "rb") as f:
-                                    st.download_button(
-                                        "Download",
-                                        f,
-                                        file_name=filename,
-                                        key=f"download_{note['id']}_{idx}"
-                                    )
+                                col_file, col_btn = st.columns([4, 1])
+                                with col_file:
+                                    st.markdown(f"{icon} `{filename}`")
+                                with col_btn:
+                                    with open(file_path, "rb") as f:
+                                        st.download_button(
+                                            "📥",
+                                            f,
+                                            file_name=filename,
+                                            key=f"download_{note['id']}_{idx}"
+                                        )
 
 else:
     if search_query:
@@ -286,6 +370,11 @@ else:
     else:
         st.info("📝 No notes yet. Add your first note above!")
 
+# ✅ Show edit success message
+if st.session_state.get('show_success_edit', False):
+    st.success("✅ Note updated successfully!")
+    st.session_state['show_success_edit'] = False
+
 # Footer
 st.markdown("---")
-st.caption("💡 **Tip:** Upload multiple files! Single images show as preview cards. Multiple files show as a list.")
+st.caption("💡 **Tip:** Click ✏️ to edit notes. Single images show as preview cards.")

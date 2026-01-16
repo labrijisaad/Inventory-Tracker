@@ -82,3 +82,57 @@ def delete_note(note_id: int) -> bool:
 def get_file_path(filename: str) -> Path:
     """Get full path for uploaded file."""
     return UPLOADS_DIR / filename
+
+def update_note(note_id: int, title: str, content: str, new_files=None):
+    """
+    Update an existing note.
+    
+    Args:
+        note_id: ID of note to update
+        title: New title
+        content: New content
+        new_files: New files to attach (if any). If provided, replaces old files.
+    
+    Returns:
+        bool: True if successful
+    """
+    notes = load_notes()
+
+    # Find note
+    note_index = None
+    for idx, note in enumerate(notes):
+        if note['id'] == note_id:
+            note_index = idx
+            break
+
+    if note_index is None:
+        return False
+
+    # Update fields
+    notes[note_index]['title'] = title
+    notes[note_index]['content'] = content
+    notes[note_index]['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Update timestamp
+
+    # Handle file updates
+    if new_files:
+        # Delete old files (optional - keep or remove)
+        old_files = notes[note_index].get('files', [])
+        if old_files:
+            for old_file in old_files:
+                old_path = get_file_path(old_file)
+                if old_path.exists():
+                    old_path.unlink()  # Delete old file
+
+        # Save new files
+        new_filenames = []
+        for uploaded_file in new_files:
+            file_path = UPLOADS_DIR / uploaded_file.name
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            new_filenames.append(uploaded_file.name)
+
+        notes[note_index]['files'] = new_filenames
+
+    # Save updated notes
+    save_notes(notes)
+    return True

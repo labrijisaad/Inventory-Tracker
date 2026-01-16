@@ -25,7 +25,6 @@ init_db()
 if "refresh_key" not in st.session_state:
     st.session_state.refresh_key = 0
 
-# ✅ SET CURRENT PAGE
 st.session_state.current_page = "Sales"
 
 # Render sidebar
