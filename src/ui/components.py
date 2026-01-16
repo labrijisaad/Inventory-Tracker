@@ -115,14 +115,15 @@ def render_title():
 
 
 def render_custom_navigation():
-    """Render custom navigation using Streamlit's native page_link - NO BULLET POINT."""
+    """Render custom navigation using Streamlit's native page_link."""
 
-    # Define pages with their actual file paths
+    # ✅ FIXED: Use correct file paths with leading zeros
     pages = [
         {"name": "Inventory", "icon": "📚", "page": "pages/01_inventory.py"},
         {"name": "Sales", "icon": "💰", "page": "pages/02_sales.py"},
         {"name": "Analytics", "icon": "📊", "page": "pages/03_analytics.py"},
         {"name": "Messages", "icon": "💬", "page": "pages/04_messages.py"},
+        {"name": "Notes", "icon": "📝", "page": "pages/06_notes.py"},  # ✅ NEW!
     ]
 
     current_page = st.session_state.get('current_page', 'Home')
@@ -174,7 +175,7 @@ def render_custom_navigation():
         is_active = current_page == page['name']
 
         if is_active:
-            # Active page - show styled div WITHOUT bullet point
+            # Active page - show styled div
             st.markdown(
                 f"""
                 <div style="
@@ -199,7 +200,6 @@ def render_custom_navigation():
             st.page_link(
                 page['page'],
                 label=f"{page['icon']} {page['name']}",
-                width='stretch'
             )
 
     st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
@@ -535,7 +535,7 @@ def render_section_header(title: str, icon: str = "📋"):
 
 
 def load_custom_css():
-    """Load custom CSS for enhanced styling with modern colors and DARK MODE METRICS FIX."""
+    """Load custom CSS for enhanced styling with DARK SIDEBAR."""
     st.markdown(
         """
         <style>
@@ -543,40 +543,71 @@ def load_custom_css():
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* ✅ FIX: Force metrics to be visible in dark mode */
+        /* ✅ DARK SIDEBAR (instead of light) */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #2d2d2d 0%, #1e1e1e 100%) !important;
+        }
+        
+        [data-testid="stSidebar"] > div:first-child {
+            padding-top: 1rem;
+        }
+        
+        /* ✅ FIX: Style page_link properly for dark sidebar */
+        .stPageLink {
+            margin-bottom: 8px;
+        }
+        
+        .stPageLink > a {
+            background: rgba(255, 255, 255, 0.05) !important;
+            padding: 12px 16px !important;
+            border-radius: 8px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            font-weight: 500 !important;
+            color: #e5e7eb !important;
+            width: 100% !important;
+            display: block !important;
+            text-decoration: none !important;
+        }
+        
+        .stPageLink > a:hover {
+            border-color: #667eea !important;
+            background: rgba(102, 126, 234, 0.2) !important;
+            transform: translateX(3px) !important;
+            color: #ffffff !important;
+        }
+        
+        /* ✅ Active page styling */
+        .stPageLink > a[aria-current="page"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border-color: #667eea !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+            transform: translateX(5px) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* ✅ Force metrics to be visible in dark mode */
         [data-testid="stMetric"] {
             background-color: transparent !important;
         }
         
         [data-testid="stMetricLabel"] {
-            color: #e5e7eb !important;  /* Light gray text */
+            color: #e5e7eb !important;
             font-weight: 600 !important;
             font-size: 14px !important;
         }
         
         [data-testid="stMetricValue"] {
-            color: #ffffff !important;  /* Pure white for numbers */
+            color: #ffffff !important;
             font-size: 28px !important;
             font-weight: 700 !important;
         }
         
         [data-testid="stMetricDelta"] {
-            color: #d1d5db !important;  /* Light gray for delta */
+            color: #d1d5db !important;
             font-size: 14px !important;
-        }
-        
-        /* Delta arrows colors */
-        [data-testid="stMetricDelta"] svg {
-            fill: currentColor !important;
-        }
-        
-        /* Sidebar improvements */
-        [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-        }
-        
-        [data-testid="stSidebar"] > div:first-child {
-            padding-top: 1rem;
         }
         
         /* Better buttons with gradient */
@@ -598,12 +629,7 @@ def load_custom_css():
             background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
         
-        /* Secondary buttons */
-        .stButton > button[kind="secondary"] {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-        }
-        
-        /* Better data editor - make it visible in dark mode */
+        /* Better data editor */
         .stDataFrame {
             border-radius: 10px;
             overflow: hidden;
@@ -654,35 +680,9 @@ def load_custom_css():
             color: white;
         }
         
-        /* Better selectbox - dark mode */
-        .stSelectbox > div > div {
-            border-radius: 8px;
-            border: 2px solid #4a4a4a;
-            background-color: #2d2d2d;
-            color: #e5e7eb;
-            transition: border 0.3s ease;
-        }
-        
-        .stSelectbox > div > div:hover,
-        .stSelectbox > div > div:focus-within {
-            border-color: #667eea;
-        }
-        
-        /* Better number input - dark mode */
-        .stNumberInput > div > div > input {
-            border-radius: 8px;
-            border: 2px solid #4a4a4a;
-            background-color: #2d2d2d;
-            color: #e5e7eb;
-            transition: border 0.3s ease;
-        }
-        
-        .stNumberInput > div > div > input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
-        
-        /* Better text input - dark mode */
+        /* Better inputs - dark mode */
+        .stSelectbox > div > div,
+        .stNumberInput > div > div > input,
         .stTextInput > div > div > input,
         .stTextArea > div > div > textarea {
             border-radius: 8px;
@@ -692,13 +692,21 @@ def load_custom_css():
             transition: border 0.3s ease;
         }
         
+        .stSelectbox > div > div:hover,
+        .stNumberInput > div > div > input:hover,
+        .stTextInput > div > div > input:hover,
+        .stTextArea > div > div > textarea:hover {
+            border-color: #667eea;
+        }
+        
+        .stNumberInput > div > div > input:focus,
         .stTextInput > div > div > input:focus,
         .stTextArea > div > div > textarea:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         
-        /* Better expander - dark mode */
+        /* Better expander */
         .streamlit-expanderHeader {
             background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
             border-radius: 8px;
@@ -711,7 +719,7 @@ def load_custom_css():
             background: linear-gradient(135deg, #4a4a4a 0%, #3d3d3d 100%);
         }
         
-        /* Success messages - darker for dark mode */
+        /* Messages */
         .stSuccess {
             background: linear-gradient(135deg, rgba(67, 233, 123, 0.2) 0%, rgba(56, 249, 215, 0.2) 100%);
             border-left: 4px solid #43e97b;
@@ -720,7 +728,6 @@ def load_custom_css():
             color: #43e97b;
         }
         
-        /* Error messages - darker for dark mode */
         .stError {
             background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(238, 90, 111, 0.2) 100%);
             border-left: 4px solid #ff6b6b;
@@ -729,7 +736,6 @@ def load_custom_css():
             color: #ff6b6b;
         }
         
-        /* Warning messages - darker for dark mode */
         .stWarning {
             background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
             border-left: 4px solid #ffc107;
@@ -738,7 +744,6 @@ def load_custom_css():
             color: #ffc107;
         }
         
-        /* Info messages - darker for dark mode */
         .stInfo {
             background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
             border-left: 4px solid #4facfe;
@@ -747,36 +752,19 @@ def load_custom_css():
             color: #4facfe;
         }
         
-        /* Better spacing */
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        
-        /* Compact sidebar */
-        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Fix caption text in dark mode */
-        .stCaptionContainer {
-            color: #9ca3af !important;
-        }
-        
-        /* Fix all text to be visible */
-        p, span, div {
-            color: inherit;
-        }
-        
-        /* Force dataframe headers to be visible */
+        /* Force dataframe headers/cells visible */
         .stDataFrame thead tr th {
             color: #e5e7eb !important;
             background-color: #2d2d2d !important;
         }
         
-        /* Force dataframe cells to be visible */
         .stDataFrame tbody tr td {
             color: #e5e7eb !important;
+        }
+        
+        /* Fix caption text */
+        .stCaptionContainer {
+            color: #9ca3af !important;
         }
         </style>
         """,
