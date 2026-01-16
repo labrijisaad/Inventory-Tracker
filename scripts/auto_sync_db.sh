@@ -1,46 +1,63 @@
 #!/bin/bash
-# Auto-commit and push database to GitHub
-# Run by cron every 6 hours on VM
 
-set -e
+# 🔄 Auto-Sync Database AND Code to GitHub
+# Runs automatically via cron every 6 hours
+# Also commits any code changes on VM
 
-REPO_DIR="/opt/midad"
+set -e  # Exit on error
 
-cd "$REPO_DIR"
+# Timestamp
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-echo "🔄 Auto-sync starting at $(date)"
+echo "🔄 Auto-sync starting at $TIMESTAMP"
+echo "📋 Current directory: $(pwd)"
 
-# Check if database exists
-if [ ! -f "data/midad.db" ]; then
-    echo "❌ Database not found: data/midad.db"
-    exit 1
+# Change to repo directory
+cd /opt/midad
+
+# Check current branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "📍 Branch: $BRANCH"
+
+# Copy production database to git staging area
+DB_PATH="/opt/midad/data/midad.db"
+if [ -f "$DB_PATH" ]; then
+    echo "📦 Database found, syncing..."
+    # Database already in git location, no copy needed
+else
+    echo "⚠️  Warning: Database not found at $DB_PATH"
 fi
 
-echo "📊 Database size: $(du -h data/midad.db | cut -f1)"
+# Stage ALL changes (database + any code changes)
+git add -A
 
-# Check if there are changes
-if git diff --quiet data/midad.db; then
-    echo "✅ No changes in database - skipping commit"
+# Check if there are changes to commit
+if git diff-index --quiet HEAD --; then
+    echo "✅ No changes to sync"
     exit 0
 fi
 
-# Configure git (if not already done)
-git config user.email "auto-sync@midad-books.local" || true
-git config user.name "Auto Sync" || true
+# Show what's being committed
+echo "📋 Changes to commit:"
+git status --short
 
-# Commit with timestamp
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-git add data/midad.db
+# Commit changes
+git commit -m "auto-sync: database + code backup $TIMESTAMP" || {
+    echo "⚠️  Nothing to commit or commit failed"
+    exit 0
+}
 
-# Commit and push
-if git commit -m "db: auto-backup $TIMESTAMP"; then
-    if git push origin test/saad_labri; then
-        echo "✅ Database synced to GitHub: $TIMESTAMP"
-    else
-        echo "⚠️ Push failed - will retry next sync"
-        git reset HEAD~1
-        exit 1
-    fi
+# Pull latest (rebase to avoid merge commits)
+echo "📥 Pulling latest from GitHub..."
+git pull origin $BRANCH --rebase || {
+    echo "⚠️  Warning: Pull failed, will try push anyway"
+}
+
+# Push to GitHub
+echo "📤 Pushing to GitHub..."
+if git push origin $BRANCH; then
+    echo "✅ Database + code synced to GitHub: $TIMESTAMP"
 else
-    echo "⚠️ Nothing to commit"
+    echo "❌ Push failed at $TIMESTAMP"
+    exit 1
 fi
