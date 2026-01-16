@@ -968,3 +968,5 @@ def get_book_performance_stats() -> list[dict]:
             })
 
         return result
+
+

@@ -5,21 +5,16 @@
 set -e
 
 REPO_DIR="/opt/midad"
-DB_PATH="/opt/midad-data/midad.db"
 
 cd "$REPO_DIR"
 
 echo "🔄 Auto-sync starting at $(date)"
 
 # Check if database exists
-if [ ! -f "$DB_PATH" ]; then
-    echo "❌ Database not found: $DB_PATH"
+if [ ! -f "data/midad.db" ]; then
+    echo "❌ Database not found: data/midad.db"
     exit 1
 fi
-
-# Copy production database to repo data folder
-mkdir -p data
-cp "$DB_PATH" data/midad.db
 
 echo "📊 Database size: $(du -h data/midad.db | cut -f1)"
 
@@ -37,14 +32,12 @@ git config user.name "Auto Sync" || true
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 git add data/midad.db
 
-# Check if we can commit (no conflicts)
+# Commit and push
 if git commit -m "db: auto-backup $TIMESTAMP"; then
-    # Push to GitHub
-    if git push origin main; then
+    if git push origin test/saad_labri; then
         echo "✅ Database synced to GitHub: $TIMESTAMP"
     else
         echo "⚠️ Push failed - will retry next sync"
-        # Rollback commit to try again next time
         git reset HEAD~1
         exit 1
     fi

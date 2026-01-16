@@ -2,13 +2,13 @@
 # Deployment script for production VM
 # Usage: ./scripts/deploy.sh
 
-set -e  # Exit on error
+set -e
 
 echo "🚀 Deploying Midad Books..."
 
-# Pull latest code
+# Pull latest code + database
 echo "📥 Pulling from GitHub..."
-git pull origin main
+git pull origin test/saad_labri
 
 # Restart service
 echo "🔄 Restarting application..."
