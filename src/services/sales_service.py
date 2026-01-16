@@ -69,7 +69,7 @@ def _render_sale_form(available_books: list[dict]):
     render_section_header("Sale Details", "📝")
     
     # ✅ NEW: Show ID + Title in dropdown
-    book_options = {f"{b['id']} - {b['title']}": b for b in available_books}
+    book_options = {f"{b['id'][5:]} - {b['title']}": b for b in available_books}
     selected_display = st.selectbox(
         "📖 Select Book", 
         list(book_options.keys()),

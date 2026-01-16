@@ -11,7 +11,7 @@ from typing import Optional
 import pandas as pd
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 
-from src.config import GENRES, PLATFORMS
+from src.config import load_default_messages
 
 # Database path
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -22,6 +22,9 @@ DB_PATH = DATA_DIR / "midad.db"
 # ============================================================================
 class Customer(SQLModel, table=True):
     """Customer database."""
+    
+    # ✅ CRITICAL FIX: Allows re-registration during hot-reload
+    __table_args__ = {"extend_existing": True}
     
     id: Optional[int] = Field(default=None, primary_key=True)
     vinted_username: str = Field(index=True, unique=True)
@@ -35,6 +38,9 @@ class Customer(SQLModel, table=True):
 
 class Book(SQLModel, table=True):
     """Book in inventory."""
+    
+    # ✅ CRITICAL FIX: Allows re-registration during hot-reload
+    __table_args__ = {"extend_existing": True}
     
     id: str = Field(primary_key=True)
     title: str = Field(index=True)
@@ -60,6 +66,9 @@ class Book(SQLModel, table=True):
 class Sale(SQLModel, table=True):
     """Sale record."""
     
+    # ✅ CRITICAL FIX: Allows re-registration during hot-reload
+    __table_args__ = {"extend_existing": True}
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     qty: int = Field(default=1, ge=1)
@@ -79,6 +88,9 @@ class Sale(SQLModel, table=True):
 class QuickMessage(SQLModel, table=True):
     """Quick message templates."""
     
+    # ✅ CRITICAL FIX: Allows re-registration during hot-reload
+    __table_args__ = {"extend_existing": True}
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
     category: str = Field(default="General")
@@ -92,6 +104,7 @@ class QuickMessage(SQLModel, table=True):
 # DATABASE ENGINE
 # ============================================================================
 _engine = None  # ✅ Singleton pattern
+_metadata_created = False  # ✅ NEW: Track if metadata is created
 
 def get_engine():
     """Get or create database engine (singleton)."""
@@ -106,27 +119,36 @@ _initialized = False  # ✅ Global flag
 
 def init_db():
     """Create tables and initialize default messages (only once)."""
-    global _initialized
+    global _initialized, _metadata_created
+    
     if _initialized:
         return  # ✅ Skip if already initialized
     
     engine = get_engine()
-    SQLModel.metadata.create_all(engine)
+    
+    # ✅ CRITICAL FIX: Clear and recreate metadata only once per session
+    if not _metadata_created:
+        SQLModel.metadata.clear()  # Clear existing metadata
+        SQLModel.metadata.create_all(engine)
+        _metadata_created = True
     
     # Initialize default messages if empty
-    with Session(engine) as session:
-        existing = session.exec(select(QuickMessage)).first()
-        if not existing:
-            from src.config import DEFAULT_QUICK_MESSAGES
-            for i, (key, msg) in enumerate(DEFAULT_QUICK_MESSAGES.items()):
-                quick_msg = QuickMessage(
-                    title=msg['title'],
-                    category=msg['category'],
-                    message=msg['message'],
-                    order_position=i
-                )
-                session.add(quick_msg)
-            session.commit()
+    try:
+        with Session(engine) as session:
+            existing = session.exec(select(QuickMessage)).first()
+            if not existing:
+                default_messages = load_default_messages()
+                for i, (key, msg) in enumerate(default_messages.items()):
+                    quick_msg = QuickMessage(
+                        title=msg['title'],
+                        category=msg['category'],
+                        message=msg['message'],
+                        order_position=i
+                    )
+                    session.add(quick_msg)
+                session.commit()
+    except Exception as e:
+        print(f"⚠️ Warning: Could not initialize default messages: {e}")
     
     _initialized = True  # ✅ Mark as initialized
 
@@ -233,7 +255,8 @@ def generate_book_id() -> str:
 def get_books(filter_type: Optional[str] = None) -> list[dict]:
     """Get all books with computed status."""
     with Session(get_engine()) as session:
-        query = select(Book).order_by(Book.id.desc())
+        # ✅ FIXED: Sort by ID ascending (BOOK-001, BOOK-002, ...)
+        query = select(Book).order_by(Book.id)
         books = session.exec(query).all()
         
         result = []
@@ -298,7 +321,7 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                 except ValueError as e:
                     return False, f"❌ Invalid number format for '{title}': {e}"
                 
-                # Check if book exists (book_id is now string)
+                # Check if book exists
                 book_id = data.get("id")
                 is_existing = (
                     book_id is not None 
@@ -319,7 +342,7 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                     book.notes = str(data.get("notes", ""))
                     processed_ids.add(str(book_id))
                 else:
-                    # Create new book with generated ID
+                    # Create new book
                     new_id = generate_book_id()
                     book = Book(
                         id=new_id,
@@ -333,7 +356,7 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
                     )
                     session.add(book)
             
-            # Handle deleted rows (only if filter is active)
+            # Handle deleted rows
             if filter_type:
                 for book_id, book in existing.items():
                     if book_id not in processed_ids:
@@ -427,9 +450,8 @@ def add_sale(book_id: str, qty: int, total_paid: float, packaging_per_book: floa
             cost = book.buy_price * qty
             profit = revenue - cost
             
-            # ✅ Standardize date to YYYY-MM-DD
+            # Standardize date
             date_str = standardize_date(sale_date)
-            print(f"📅 Recording sale with date: {date_str}")
             
             # Create sale
             sale = Sale(
@@ -509,9 +531,8 @@ def add_bundle_sale(book_ids: list[str], quantities: list[int], total_paid: floa
             # Generate bundle ID
             bundle_id = str(uuid.uuid4())[:8]
             
-            # ✅ Standardize date to YYYY-MM-DD
+            # Standardize date
             date_str = standardize_date(sale_date)
-            print(f"📅 Recording bundle sale with date: {date_str}")
             
             # Create sales for each book in bundle
             for book, qty in zip(books, quantities):
@@ -600,7 +621,7 @@ def get_stats() -> dict:
         items_sold = sum(s.qty for s in sales)
         total_packaging = sum(s.packaging_per_book * s.qty for s in sales)
         
-        # Calculate COGS (Cost of Goods Sold)
+        # Calculate COGS
         cogs = 0
         for sale in sales:
             book = session.get(Book, sale.book_id)

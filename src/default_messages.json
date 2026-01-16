@@ -1,0 +1,52 @@
+{
+  "shipped": {
+    "title": "📦 Order Shipped",
+    "category": "Shipping",
+    "message": "Bonjour! 🌸\n\nGood news! Your order has been shipped today via Mondial Relay. 📦✨\n\nYou will receive a tracking number by email shortly.\n\nنتمنى أن يصلك في أقرب وقت 🤍\n\nHappy reading! 📚\n\nBest regards,\nMidad Books 🪶\nInstagram: @midad.books"
+  },
+  "thank_you": {
+    "title": "💖 Thank You Message",
+    "category": "Follow-up",
+    "message": "Thank you so much for your kind words! 🥰💖\n\nشكراً جزيلاً، كلماتك أسعدتنا حقاً 🌸\n\nWe're constantly adding new titles. Follow us to stay updated! ✨\n\nتابعونا للمزيد من الكتب الرائعة 📚\n\nHappy reading! 🤍\n\nMidad Books 🪶"
+  },
+  "welcome_new": {
+    "title": "👋 Welcome New Customer",
+    "category": "General",
+    "message": "Bonjour et bienvenue! 🌸\n\nThank you for your interest in our Arabic books collection. 📚\n\nمرحباً بك في مداد للكتب العربية 🤍\n\nAll our books are carefully selected and in excellent condition.\n\nFeel free to ask any questions! 😊\n\nBest regards,\nMidad Books 🪶\nInstagram: @midad.books"
+  },
+  "bundle_offer": {
+    "title": "🎁 Bundle Discount Offer",
+    "category": "Promotion",
+    "message": "Hello! 😊\n\nGreat choice! If you're interested in multiple books, we offer special bundle discounts:\n\n📚 2 books: 10% off\n📚 3+ books: 20% off\n\nعروض خاصة على الكتب المجمعة! 🎉\n\nLet me know which books interest you! 🤍\n\nMidad Books 🪶"
+  },
+  "price_response": {
+    "title": "💰 Price Inquiry Response",
+    "category": "General",
+    "message": "Bonjour! 😊\n\nThank you for your interest. 🤍\n\nThe price for this book is €[PRICE]\n\nسعر الكتاب: €[PRICE] 💰\n\nShipping within France via Mondial Relay. Bundle discounts available!\n\nAny questions? Feel free to ask! ✨\n\nMidad Books 🪶"
+  },
+  "order_confirmation": {
+    "title": "✅ Order Confirmed",
+    "category": "General",
+    "message": "Perfect! Your order is confirmed. ✅\n\nطلبك تم تأكيده بنجاح 🎉\n\nI'll prepare your book(s) and ship within 1-2 business days.\n\nYou'll receive tracking information soon! 📦\n\nThank you! 🤍\n\nMidad Books 🪶\nInstagram: @midad.books"
+  },
+  "payment_received": {
+    "title": "💳 Payment Received",
+    "category": "General",
+    "message": "Payment received, thank you! 💳✨\n\nتم استلام الدفع، شكراً جزيلاً 🤍\n\nYour order will be shipped today/tomorrow.\n\nTracking number coming soon! 📦\n\nMidad Books 🪶"
+  },
+  "delivery_delay": {
+    "title": "⏰ Shipping Delay Notice",
+    "category": "Support",
+    "message": "Bonjour,\n\nWe wanted to inform you that there may be a slight delay in shipping due to [REASON].\n\nنعتذر عن التأخير البسيط 🙏\n\nYour order will be shipped by [DATE] at the latest.\n\nThank you for your patience! 🤍\n\nMidad Books 🪶"
+  },
+  "book_condition": {
+    "title": "📖 Book Condition Info",
+    "category": "General",
+    "message": "Regarding the book condition: 📖\n\nAll our books are carefully checked and in very good condition unless stated otherwise.\n\nجميع كتبنا بحالة ممتازة ومفحوصة بعناية ✨\n\nIf you have specific questions about a book's condition, feel free to ask!\n\nMidad Books 🪶"
+  },
+  "custom_request": {
+    "title": "🔍 Custom Book Request",
+    "category": "Support",
+    "message": "Thank you for your request! 🔍\n\nشكراً على طلبك 🤍\n\nI'll check if we have this book in stock or can order it for you.\n\nI'll get back to you within 24 hours! ✨\n\nMidad Books 🪶\nInstagram: @midad.books"
+  }
+}

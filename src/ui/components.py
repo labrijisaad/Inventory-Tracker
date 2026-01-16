@@ -116,19 +116,9 @@ def render_title():
 
 def render_custom_navigation():
     """Render custom navigation using Streamlit's native page_link - NO BULLET POINT."""
-    st.markdown(
-        """
-        <h3 style="color: #495057; font-size: 14px; font-weight: 600; margin: 20px 0 12px 0; 
-                   text-transform: uppercase; letter-spacing: 0.5px;">
-            🧭 Navigation
-        </h3>
-        """,
-        unsafe_allow_html=True
-    )
-    
+
     # Define pages with their actual file paths
     pages = [
-        {"name": "Home", "icon": "🏠", "page": "app.py"},
         {"name": "Inventory", "icon": "📚", "page": "pages/01_inventory.py"},
         {"name": "Sales", "icon": "💰", "page": "pages/02_sales.py"},
         {"name": "Analytics", "icon": "📊", "page": "pages/03_analytics.py"},
@@ -458,7 +448,7 @@ def render_alerts(low_stock: list, recent_sales: list, week_range: str):
                         border-left: 3px solid #17a2b8; margin-top: 8px;
                         box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);">
                 <p style="margin: 0; color: #0c5460; font-size: 12px; font-weight: 600;">
-                    🔥 {len(recent_sales)} sale(s) this week
+                    🔥 {len(recent_sales)} book(s) sold this week
                 </p>
                 <p style="margin: 3px 0 0 0; color: #0c5460; font-size: 10px;">
                     {week_range}
@@ -476,8 +466,7 @@ def render_footer():
         """
         <div style="text-align: center; color: #adb5bd; font-size: 10px; padding-top: 15px; 
                     border-top: 1px solid #e9ecef;">
-            <p style="margin: 3px 0;">📚 Midad Books</p>
-            <p style="margin: 3px 0;">© 2026 • v1.0.0</p>
+            <p style="margin: 3px 0;">Midad Books</p>
         </div>
         """,
         unsafe_allow_html=True,

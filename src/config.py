@@ -3,12 +3,15 @@ Application Configuration
 All constants and settings in one place
 """
 
+import json
+from pathlib import Path
+
 # Stock alerts
 LOW_STOCK_THRESHOLD = 2
 CRITICAL_STOCK_THRESHOLD = 1
 
 # Default values
-DEFAULT_PACKAGING_COST = 1.0
+DEFAULT_PACKAGING_COST = 0.45
 DEFAULT_PLATFORM = "Vinted"
 
 # Platforms
@@ -76,92 +79,25 @@ MESSAGE_CATEGORIES = [
     "Custom"
 ]
 
-# Default quick messages
-DEFAULT_QUICK_MESSAGES = {
-    "shipped": {
-        "title": "📦 Shipped Notification",
-        "category": "Shipping",
-        "message": """Hello 🌸📦
 
-Good news! Your order has been shipped today 🚚✨
+# ============================================================================
+# LOAD DEFAULT QUICK MESSAGES FROM JSON
+# ============================================================================
+def load_default_messages() -> dict:
+    """Load default quick messages from JSON file."""
+    config_dir = Path(__file__).parent
+    json_path = config_dir / "default_messages.json"
+    
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"⚠️ Warning: {json_path} not found. Using empty defaults.")
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"⚠️ Warning: Error parsing {json_path}: {e}")
+        return {}
 
-We hope it reaches you very soon 🤍
 
-نتمنى أن يصلك في أقرب وقت 🌷
-
-Happy reading in advance 📚💫
-
-قراءة ممتعة 🤍
-
-Kind regards,
-Midad | كتب عربية 🪶🍂
-Instagram: @midad.books"""
-    },
-    "thank_you": {
-        "title": "💖 Thank You",
-        "category": "Follow-up",
-        "message": """Thank you so much, your message truly made our day 🥰💖
-شكراً لكِ من القلب 🌸
-
-InshaaAllah, we will add more books of this kind very soon 📚✨
-
-تابعينا دائماً، القادم أجمل بإذن الله 💫
-
-Wishing you a wonderful reading experience 🌸"""
-    },
-    "welcome_discount": {
-        "title": "🌸 Welcome + Discount",
-        "category": "Promotion",
-        "message": """Welcome to Midad.Books 🤍📚
-
-We're happy to have you here ✨🥰
-
-If you're interested in this book or any other Arabic titles, we currently offer up to 20% off on bundles 🍂
-
-Feel free to ask anything — we'll be happy to help 🤎
-
-يسعدنا خدمتك دائماً 🤍
-
-Kind regards,
-Midad | كتب عربية 🪶🍂
-Instagram: @midad.books"""
-    },
-    "price_inquiry": {
-        "title": "💰 Price Response",
-        "category": "General",
-        "message": """Hello 😊✨
-
-Thank you for your interest 🤍📚
-
-The price for this book is €12💰
-If you're interested in multiple books, I can offer a special bundle discount 🌸✨
-
-يسعدني مساعدتك 🤍
-
-Kind regards,
-Midad | كتب عربية 🪶🍂"""
-    },
-    "order_ready": {
-        "title": "✅ Order Ready",
-        "category": "General",
-        "message": """Hello, Your order is ready 🤎
-
-Kind regards,
-Midad | كتب عربية 🪶🍂
-Instagram: @midad.books"""
-    },
-    "general_welcome": {
-        "title": "👋 General Welcome",
-        "category": "General",
-        "message": """Hello☺️,
-
-Welcome to Midad.Books, a page for Arabic books. If you're interested in this book or any other titles, we currently offer discounts of up to 20% off.
-
-Feel free to ask ☺️we'll be happy to help you.🤎
-
-Kind regards,
-Midad | كتب عربية 🪶🍂
-Instagram: @midad.books
-قراءة ممتعة دائماً 🤍"""
-    }
-}
+# Load messages on import
+DEFAULT_QUICK_MESSAGES = load_default_messages()

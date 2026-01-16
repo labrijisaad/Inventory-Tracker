@@ -131,14 +131,14 @@ def _get_column_config(status_filter: Optional[str]) -> tuple[dict, list]:
     """Get column configuration based on filter."""
     if status_filter == "active":
         column_config = {
-            "id": st.column_config.TextColumn("🆔 ID", width="small", disabled=True),
-            "title": st.column_config.TextColumn("📖 Title", width="large", required=True),
-            "author": st.column_config.TextColumn("✍️ Author", width="medium"),
-            "genre": st.column_config.SelectboxColumn("📂 Genre", options=GENRES, width="small"),
-            "buy_price": st.column_config.NumberColumn("💵 Buy €", format="%.2f", min_value=0, width="small"),
-            "target_price": st.column_config.NumberColumn("🎯 Target €", format="%.2f", min_value=0, width="small"),
-            "stock": st.column_config.NumberColumn("📦 Stock", min_value=0, step=1, width="small"),
+            "id": st.column_config.TextColumn("ID", width="small", disabled=True),
+            "title": st.column_config.TextColumn("Title", width="large", required=True),
+            "author": st.column_config.TextColumn("Author", width="small"),
+            "buy_price": st.column_config.NumberColumn("Buy €", format="%.2f", min_value=0, width="small"),
+            "target_price": st.column_config.NumberColumn("Target €", format="%.2f", min_value=0, width="small"),
+            "stock": st.column_config.NumberColumn("Stock", min_value=0, step=1, width="small"),
             "status": None,
+            "genre": st.column_config.SelectboxColumn("Genre", options=GENRES, width="small"),
             "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
             "created_at": None,
         }
