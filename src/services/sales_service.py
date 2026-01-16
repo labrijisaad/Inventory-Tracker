@@ -207,7 +207,7 @@ def _render_sale_form(available_books: list[dict]):
 
     # Submit button
     submit_disabled = len(validation_issues) > 0
-    if st.button("✅ Record Sale", type="primary", use_container_width=True,
+    if st.button("✅ Record Sale", type="primary", width='stretch',
                  key="submit_sale", disabled=submit_disabled):
         with st.spinner("Recording sale..."):
             success, msg = add_sale(
@@ -334,7 +334,7 @@ def _render_sales_history():
             "Customer": st.column_config.TextColumn("Customer", width="medium"),
         },
         hide_index=True,
-        use_container_width=True
+        width='stretch'
     )
 
     # Bundle details
@@ -601,7 +601,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
     st.divider()
 
     # Submit
-    if st.button("✅ Record Bundle Sale", type="primary", use_container_width=True, key="submit_bundle"):
+    if st.button("✅ Record Bundle Sale", type="primary", width='stretch', key="submit_bundle"):
         if not bundle_customer.strip() or not bundle_username.strip():
             show_error_toast("Customer info required")
             st.error("❌ Please enter customer name and username")

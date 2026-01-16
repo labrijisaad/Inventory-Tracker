@@ -2944,3 +2944,1218 @@ git add DEPLOYMENT.md
 git commit -m "docs: add actual production deployment guide"
 git push origin test/saad_labri
 Done! 🚀
+
+Reasoning:
+The user wants a comprehensive README for developers (including their future self) that explains:
+1. How to develop locally
+2. How to test changes
+3. How to deploy to production
+4. Best practices
+5. Common workflows
+
+This should be a complete guide that they can reference in the future when they've forgotten the setup. Let me create a detailed DEVELOPER_GUIDE.md that covers everything.
+
+I should include:
+- Local development setup
+- Testing workflow
+- Deployment process
+- Git workflow
+- VM management
+- Troubleshooting
+- Best practices
+- Common scenarios
+
+Let me make it practical and example-driven.# 👨‍💻 DEVELOPER GUIDE - Midad Books Inventory Tracker
+
+**Complete guide for developing, testing, and deploying changes.**
+
+---
+
+## 📋 Table of Contents
+
+1. [Quick Start](#quick-start)
+2. [Local Development](#local-development)
+3. [Development Workflow](#development-workflow)
+4. [Testing](#testing)
+5. [Deployment](#deployment)
+6. [Git Workflow](#git-workflow)
+7. [VM Management](#vm-management)
+8. [Best Practices](#best-practices)
+9. [Common Scenarios](#common-scenarios)
+10. [Troubleshooting](#troubleshooting)
+
+---
+
+## 🚀 Quick Start
+
+### **TL;DR - I Just Want to Start Coding**
+
+```powershell
+# 1. Pull latest code + database
+cd ~/Inventory-Tracker
+git pull origin test/saad_labri
+
+# 2. Run locally
+uv run streamlit run app.py
+# → Opens at http://localhost:8501
+
+# 3. Make changes, test, commit
+git add .
+git commit -m "your changes"
+git push origin test/saad_labri
+
+# 4. Deploy to production
+gcloud compute ssh midad-app --zone=us-central1-c
+cd /opt/midad && ./scripts/deploy.sh
+exit
+```
+
+**That's it!** ✅
+
+---
+
+## 💻 Local Development
+
+### Prerequisites
+
+**Required on your PC**:
+- ✅ Python 3.11+
+- ✅ UV package manager
+- ✅ Git
+- ✅ VS Code (recommended)
+
+### Initial Setup (First Time Only)
+
+```powershell
+# Clone repository
+git clone https://github.com/labrijisaad/Inventory-Tracker.git
+cd Inventory-Tracker
+
+# Switch to development branch
+git checkout test/saad_labri
+
+# Install UV (if not already installed)
+irm https://astral.sh/uv/install.ps1 | iex
+
+# Install dependencies
+uv sync
+
+# Run app
+uv run streamlit run app.py
+```
+
+### Project Structure
+
+```
+Inventory-Tracker/
+├── app.py                    # Main entry point
+├── pages/                    # Streamlit pages
+│   ├── 1_inventory.py       # Inventory management
+│   ├── 2_sales.py           # Sales recording
+│   ├── 3_analytics.py       # Analytics dashboard
+│   ├── 4_customers.py       # Customer management
+│   ├── 5_quick_messages.py  # Quick messages
+│   └── 99_health.py         # Health check (hidden)
+├── src/
+│   ├── data/
+│   │   ├── database.py      # Database connection
+│   │   └── models.py        # SQLModel models
+│   ├── services/
+│   │   ├── book_service.py
+│   │   ├── sale_service.py
+│   │   ├── customer_service.py
+│   │   └── message_service.py
+│   └── utils/
+│       └── formatters.py    # Utility functions
+├── data/
+│   └── midad.db             # SQLite database (git-tracked)
+├── scripts/                  # Deployment scripts
+│   ├── deploy.sh            # Deploy code to VM
+│   ├── git_push_all.sh      # Push code + database
+│   ├── auto_sync_db.sh      # Auto-sync (cron)
+│   └── backup.sh            # Backup script
+├── .streamlit/
+│   └── config.toml          # Streamlit config
+├── pyproject.toml           # Dependencies
+└── uv.lock                  # Lock file
+```
+
+---
+
+## 🔄 Development Workflow
+
+### Standard Development Cycle
+
+```
+1. Pull latest changes
+2. Create/switch feature branch (optional)
+3. Run app locally
+4. Make changes
+5. Test changes
+6. Commit changes
+7. Push to GitHub
+8. Deploy to production
+9. Verify in production
+```
+
+### Detailed Steps
+
+#### **1. Pull Latest Changes**
+
+```powershell
+cd ~/Inventory-Tracker
+git checkout test/saad_labri
+git pull origin test/saad_labri
+```
+
+**What this does**:
+- ✅ Gets latest code from VM
+- ✅ Gets latest production database
+- ✅ Syncs your local with production
+
+---
+
+#### **2. Create Feature Branch (Optional)**
+
+**For small fixes** → Work on `test/saad_labri` directly
+
+**For major features** → Create feature branch:
+
+```powershell
+# Create and switch to feature branch
+git checkout -b feature/customer-export
+
+# Work on your feature...
+```
+
+---
+
+#### **3. Run App Locally**
+
+```powershell
+# Start Streamlit
+uv run streamlit run app.py
+
+# App opens at: http://localhost:8501
+```
+
+**Check Console**:
+```
+You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.x.x:8501
+
+📂 Database path: ./data/midad.db
+```
+
+**This uses your local database** (production data from git pull) ✅
+
+---
+
+#### **4. Make Changes**
+
+**Example: Add a new page**
+
+Create: `pages/6_reports.py`
+
+```python
+import streamlit as st
+
+st.set_page_config(
+    page_title="Reports",
+    page_icon="📊",
+    layout="wide"
+)
+
+st.title("📊 Reports")
+
+# Your code here...
+```
+
+**Example: Modify a service**
+
+Edit: `src/services/sale_service.py`
+
+```python
+def calculate_profit(self, sale: Sale) -> float:
+    """Calculate profit for a sale."""
+    # Your changes...
+    return profit
+```
+
+---
+
+#### **5. Test Changes**
+
+**Manual Testing**:
+1. ✅ App loads without errors
+2. ✅ Your changes work as expected
+3. ✅ No broken existing features
+4. ✅ Database operations work
+
+**Check Console for Errors**:
+```powershell
+# Look for errors in terminal
+# Red text = errors! ❌
+# Fix before committing!
+```
+
+**Test Database Operations**:
+- Record a sale
+- Update inventory
+- Check analytics
+- Verify data saved
+
+---
+
+#### **6. Commit Changes**
+
+```powershell
+# Check what changed
+git status
+
+# Stage changes
+git add .
+
+# Or stage specific files:
+git add pages/6_reports.py
+git add src/services/sale_service.py
+
+# Commit with descriptive message
+git commit -m "feat: add monthly reports page"
+
+# Commit message format:
+# feat: new feature
+# fix: bug fix
+# docs: documentation
+# refactor: code refactoring
+# test: tests
+# chore: maintenance
+```
+
+---
+
+#### **7. Push to GitHub**
+
+```powershell
+# Push to your branch
+git push origin test/saad_labri
+
+# Or if on feature branch:
+git push origin feature/customer-export
+```
+
+**GitHub now has your changes!** ✅
+
+---
+
+#### **8. Deploy to Production**
+
+**Option A: SSH + Deploy Script (Recommended)**
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Deploy
+cd /opt/midad
+./scripts/deploy.sh
+
+# View logs (verify no errors)
+sudo journalctl -u midad -n 30
+
+# Exit
+exit
+```
+
+**Option B: Manual Deploy**
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Pull latest
+cd /opt/midad
+git pull origin test/saad_labri
+
+# Restart app
+sudo systemctl restart midad
+
+# Check status
+sudo systemctl status midad
+
+# Exit
+exit
+```
+
+---
+
+#### **9. Verify in Production**
+
+**Open production app**:
+```
+http://34.44.149.243:8501
+```
+
+**Check**:
+- ✅ Your changes are visible
+- ✅ No errors in UI
+- ✅ Functionality works
+- ✅ Database operations succeed
+
+**If issues** → Check logs:
+```bash
+gcloud compute ssh midad-app --zone=us-central1-c
+sudo journalctl -u midad -f
+```
+
+---
+
+## 🧪 Testing
+
+### Manual Testing Checklist
+
+**Before Pushing**:
+```
+✅ App starts without errors
+✅ All pages load
+✅ Navigation works
+✅ Database reads work (view inventory)
+✅ Database writes work (record sale)
+✅ No console errors
+```
+
+### Testing with Production Database
+
+**Your local app uses production database automatically!**
+
+```powershell
+# Pull latest database
+git pull origin test/saad_labri
+
+# Now data/midad.db is production database
+uv run streamlit run app.py
+
+# Test with real data ✅
+```
+
+**Warning**: Changes you make locally affect your local database only (until you push).
+
+### Testing Database Changes
+
+**If you modify database schema**:
+
+1. **Test locally first**:
+   ```powershell
+   # Backup local database
+   cp data/midad.db data/midad_backup.db
+   
+   # Test your changes
+   uv run streamlit run app.py
+   
+   # If broken, restore:
+   cp data/midad_backup.db data/midad.db
+   ```
+
+2. **Deploy carefully**:
+   - Commit database changes
+   - Push to GitHub
+   - Deploy to production
+   - **Monitor logs carefully!**
+
+---
+
+## 🚀 Deployment
+
+### Quick Deploy (Most Common)
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Deploy
+cd /opt/midad && ./scripts/deploy.sh
+
+# Exit
+exit
+```
+
+**What `deploy.sh` does**:
+```
+1. Pulls latest code from GitHub
+2. Restarts Streamlit service
+3. Shows service status
+4. Displays recent logs
+```
+
+### Deploy with Database Sync
+
+**If you changed database locally**:
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Pull code + database
+cd /opt/midad
+git pull origin test/saad_labri
+
+# Restart app
+sudo systemctl restart midad
+
+# Verify
+sudo journalctl -u midad -n 20
+
+# Exit
+exit
+```
+
+### Rollback to Previous Version
+
+**If deployment breaks production**:
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+cd /opt/midad
+
+# See recent commits
+git log --oneline -n 10
+
+# Rollback to previous commit
+git checkout abc1234  # Replace with commit hash
+
+# Restart app
+sudo systemctl restart midad
+
+# Verify fixed
+sudo systemctl status midad
+
+# Exit
+exit
+```
+
+**Then fix the issue locally before deploying again!**
+
+---
+
+## 📝 Git Workflow
+
+### Branch Strategy
+
+```
+main                    # Stable production code (unused currently)
+test/saad_labri        # Active development branch (current production)
+feature/your-feature   # Optional feature branches
+```
+
+### Typical Git Commands
+
+```powershell
+# Pull latest
+git pull origin test/saad_labri
+
+# Create feature branch (optional)
+git checkout -b feature/new-analytics
+
+# Check status
+git status
+
+# View changes
+git diff
+
+# Stage all changes
+git add .
+
+# Stage specific file
+git add src/services/sale_service.py
+
+# Commit
+git commit -m "feat: add profit trends chart"
+
+# Push
+git push origin test/saad_labri
+
+# View commit history
+git log --oneline -n 10
+
+# Discard local changes
+git restore src/services/sale_service.py
+
+# Discard ALL local changes (⚠️ dangerous!)
+git reset --hard HEAD
+```
+
+### Merging Feature Branch
+
+**If you worked on a feature branch**:
+
+```powershell
+# Switch to main branch
+git checkout test/saad_labri
+
+# Pull latest
+git pull origin test/saad_labri
+
+# Merge feature branch
+git merge feature/new-analytics
+
+# Push merged changes
+git push origin test/saad_labri
+
+# Delete feature branch (optional)
+git branch -d feature/new-analytics
+```
+
+---
+
+## 🖥️ VM Management
+
+### SSH Access
+
+**Via gcloud CLI**:
+```bash
+gcloud compute ssh midad-app --zone=us-central1-c
+```
+
+**Via browser**:
+1. Go to: https://console.cloud.google.com/compute/instances
+2. Find: `midad-app`
+3. Click: "SSH" button
+
+### Service Management
+
+```bash
+# Check status
+sudo systemctl status midad
+
+# Start service
+sudo systemctl start midad
+
+# Stop service
+sudo systemctl stop midad
+
+# Restart service
+sudo systemctl restart midad
+
+# View logs (live)
+sudo journalctl -u midad -f
+
+# View last 50 lines
+sudo journalctl -u midad -n 50
+
+# View errors only
+sudo journalctl -u midad -p err
+```
+
+### Manual Git Sync (From VM)
+
+**Push local VM changes to GitHub**:
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Push everything
+cd /opt/midad
+./scripts/git_push_all.sh
+
+# Or with message:
+./scripts/git_push_all.sh "sync: database update from production"
+
+# Exit
+exit
+```
+
+**Then pull on your PC**:
+```powershell
+git pull origin test/saad_labri
+```
+
+### Check Cron Jobs
+
+```bash
+# List cron jobs
+crontab -l
+
+# Edit cron jobs
+crontab -e
+
+# View auto-sync logs
+cat /opt/midad/logs/auto-sync.log
+
+# View backup logs
+cat /opt/midad/logs/backup.log
+```
+
+### Database Backup
+
+**Manual backup**:
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Create backup
+cd /opt/midad
+./scripts/backup.sh
+
+# List backups
+ls -lh /opt/backups/
+
+# Download backup to local PC
+# (run from your PC)
+gcloud compute scp midad-app:/opt/backups/midad_backup_20260116_030000.db ./local_backup.db --zone=us-central1-c
+
+# Exit
+exit
+```
+
+---
+
+## ✅ Best Practices
+
+### Development
+
+1. **Always pull before starting work**
+   ```powershell
+   git pull origin test/saad_labri
+   ```
+
+2. **Test locally before pushing**
+   ```powershell
+   uv run streamlit run app.py
+   ```
+
+3. **Commit frequently with clear messages**
+   ```powershell
+   git commit -m "fix: sales calculation for bundle discounts"
+   ```
+
+4. **Push at end of work session**
+   ```powershell
+   git push origin test/saad_labri
+   ```
+
+5. **Deploy after testing locally**
+   ```bash
+   # Only deploy if local testing passed ✅
+   cd /opt/midad && ./scripts/deploy.sh
+   ```
+
+### Database Safety
+
+1. **Never edit database directly in production**
+   - ❌ Don't SSH into VM and modify midad.db
+   - ✅ Test changes locally first
+
+2. **Backup before major changes**
+   ```bash
+   ./scripts/backup.sh
+   ```
+
+3. **Database is in git** (you can rollback!)
+   ```powershell
+   git log -- data/midad.db
+   git checkout abc1234 -- data/midad.db
+   ```
+
+### Code Quality
+
+1. **Use type hints**
+   ```python
+   def calculate_profit(sale: Sale) -> float:
+       ...
+   ```
+
+2. **Add docstrings**
+   ```python
+   def calculate_profit(sale: Sale) -> float:
+       """Calculate profit for a sale.
+       
+       Args:
+           sale: Sale object
+           
+       Returns:
+           Profit amount in EUR
+       """
+       ...
+   ```
+
+3. **Keep functions small and focused**
+   ```python
+   # ✅ Good: Single responsibility
+   def get_book_by_id(book_id: str) -> Book | None:
+       ...
+   
+   # ❌ Bad: Does too much
+   def get_book_and_update_and_calculate_profit(book_id: str):
+       ...
+   ```
+
+4. **Use meaningful variable names**
+   ```python
+   # ✅ Good
+   total_profit = sale.total_paid - sale.total_cost
+   
+   # ❌ Bad
+   tp = s.tp - s.tc
+   ```
+
+---
+
+## 📖 Common Scenarios
+
+### Scenario 1: Add New Feature
+
+**Example: Add customer export to CSV**
+
+```powershell
+# 1. Pull latest
+git pull origin test/saad_labri
+
+# 2. Run locally
+uv run streamlit run app.py
+
+# 3. Create feature
+# Edit: pages/4_customers.py
+# Add CSV export button
+
+# 4. Test
+# Click export button, verify CSV downloads
+
+# 5. Commit
+git add pages/4_customers.py
+git commit -m "feat: add customer CSV export"
+
+# 6. Push
+git push origin test/saad_labri
+
+# 7. Deploy
+gcloud compute ssh midad-app --zone=us-central1-c
+cd /opt/midad && ./scripts/deploy.sh
+exit
+
+# 8. Test in production
+# Open http://34.44.149.243:8501/customers
+# Verify export works
+```
+
+---
+
+### Scenario 2: Fix Bug
+
+**Example: Sales calculation showing wrong profit**
+
+```powershell
+# 1. Pull latest (get production database to reproduce bug)
+git pull origin test/saad_labri
+
+# 2. Run locally
+uv run streamlit run app.py
+
+# 3. Reproduce bug
+# Record a sale, check profit calculation
+
+# 4. Fix bug
+# Edit: src/services/sale_service.py
+# Fix calculation logic
+
+# 5. Test fix
+# Record same sale again, verify profit is correct
+
+# 6. Commit
+git add src/services/sale_service.py
+git commit -m "fix: profit calculation for discounted sales"
+
+# 7. Push
+git push origin test/saad_labri
+
+# 8. Deploy
+gcloud compute ssh midad-app --zone=us-central1-c
+cd /opt/midad && ./scripts/deploy.sh
+exit
+
+# 9. Verify fix in production
+```
+
+---
+
+### Scenario 3: Update Dependencies
+
+**Example: Update Streamlit to latest version**
+
+```powershell
+# 1. Update locally
+uv add streamlit@latest
+
+# 2. Test app works with new version
+uv run streamlit run app.py
+
+# 3. If working, commit
+git add pyproject.toml uv.lock
+git commit -m "chore: update streamlit to 1.x.x"
+
+# 4. Push
+git push origin test/saad_labri
+
+# 5. Deploy to VM
+gcloud compute ssh midad-app --zone=us-central1-c
+cd /opt/midad
+git pull origin test/saad_labri
+uv sync  # Install new dependencies
+sudo systemctl restart midad
+exit
+```
+
+---
+
+### Scenario 4: Database Schema Change
+
+**Example: Add "publisher" field to books**
+
+```powershell
+# 1. Pull latest
+git pull origin test/saad_labri
+
+# 2. Backup local database
+cp data/midad.db data/midad_backup.db
+
+# 3. Update model
+# Edit: src/data/models.py
+class Book(SQLModel, table=True):
+    publisher: str | None = None  # Add new field
+
+# 4. Create migration script (manual)
+# Create: migrate_add_publisher.py
+from sqlmodel import Session, select
+from src.data.database import engine
+from src.data.models import Book
+
+with Session(engine) as session:
+    # Add column (SQLite allows nullable columns without migration)
+    # Just run app and SQLModel will handle it
+    pass
+
+# 5. Test locally
+uv run streamlit run app.py
+# Add a book with publisher field
+
+# 6. If working, commit
+git add .
+git commit -m "feat: add publisher field to books"
+
+# 7. Push
+git push origin test/saad_labri
+
+# 8. Deploy (database schema updates automatically)
+gcloud compute ssh midad-app --zone=us-central1-c
+cd /opt/midad && ./scripts/deploy.sh
+exit
+```
+
+**⚠️ For production schema changes**:
+- Test locally first!
+- Backup production database before deploying
+- Monitor logs after deployment
+
+---
+
+### Scenario 5: Pull Production Database to Local
+
+**Example: Want to see latest sales data locally**
+
+```powershell
+# Production auto-syncs every 6 hours
+# Just pull from GitHub!
+
+git pull origin test/saad_labri
+
+# Now data/midad.db is latest production database
+uv run streamlit run app.py
+```
+
+**Manual sync from VM** (if can't wait 6 hours):
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Push latest database
+cd /opt/midad
+./scripts/git_push_all.sh "sync: latest production data"
+
+# Exit
+exit
+```
+
+**Then on local PC**:
+```powershell
+git pull origin test/saad_labri
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### App Won't Start Locally
+
+**Error**: `ModuleNotFoundError: No module named 'streamlit'`
+
+**Fix**:
+```powershell
+uv sync
+uv run streamlit run app.py
+```
+
+---
+
+**Error**: `FileNotFoundError: data/midad.db`
+
+**Fix**:
+```powershell
+# Pull database from GitHub
+git pull origin test/saad_labri
+
+# Or create fresh database
+uv run python reset_db.py
+```
+
+---
+
+**Error**: Port already in use
+
+**Fix**:
+```powershell
+# Kill existing Streamlit
+Get-Process -Name "streamlit" | Stop-Process
+
+# Or use different port
+uv run streamlit run app.py --server.port 8502
+```
+
+---
+
+### Production App Not Accessible
+
+**Symptom**: `http://34.44.149.243:8501` doesn't load
+
+**Check service status**:
+```bash
+gcloud compute ssh midad-app --zone=us-central1-c
+sudo systemctl status midad
+```
+
+**If inactive**:
+```bash
+sudo systemctl start midad
+sudo journalctl -u midad -n 50  # Check why it stopped
+```
+
+**If active but not accessible**:
+```bash
+# Check firewall
+gcloud compute firewall-rules list | grep streamlit
+
+# Recreate if missing
+gcloud compute firewall-rules create allow-streamlit \
+    --allow=tcp:8501 \
+    --source-ranges=0.0.0.0/0 \
+    --target-tags=http-server
+```
+
+---
+
+### Git Push Failed
+
+**Error**: `Authentication failed`
+
+**Fix**:
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Test SSH connection
+ssh -T git@github.com
+
+# If failed, regenerate SSH key
+ssh-keygen -t ed25519 -C "midad-vm" -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub
+
+# Add to GitHub: https://github.com/settings/keys
+```
+
+---
+
+### Database Corrupted
+
+**Symptom**: App crashes, database errors
+
+**Restore from backup**:
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+# Stop app
+sudo systemctl stop midad
+
+# List backups
+ls -lh /opt/backups/
+
+# Restore from backup
+cp /opt/backups/midad_backup_20260116_030000.db /opt/midad/data/midad.db
+
+# Start app
+sudo systemctl start midad
+
+# Check logs
+sudo journalctl -u midad -n 20
+```
+
+**Or restore from git**:
+```bash
+cd /opt/midad
+git log --oneline -- data/midad.db
+git checkout abc1234 -- data/midad.db
+sudo systemctl restart midad
+```
+
+---
+
+### Deployment Broke Production
+
+**Rollback**:
+
+```bash
+# SSH into VM
+gcloud compute ssh midad-app --zone=us-central1-c
+
+cd /opt/midad
+
+# See recent commits
+git log --oneline -n 5
+
+# Rollback to previous commit
+git reset --hard abc1234  # Commit before your changes
+
+# Restart app
+sudo systemctl restart midad
+
+# Verify
+sudo systemctl status midad
+```
+
+**Then fix locally and redeploy!**
+
+---
+
+## 📚 Reference
+
+### Useful Commands Summary
+
+**Local Development**:
+```powershell
+git pull origin test/saad_labri        # Pull latest
+uv run streamlit run app.py            # Run app
+git add .                              # Stage changes
+git commit -m "message"                # Commit
+git push origin test/saad_labri        # Push
+```
+
+**Production Deploy**:
+```bash
+gcloud compute ssh midad-app --zone=us-central1-c
+cd /opt/midad && ./scripts/deploy.sh
+exit
+```
+
+**VM Management**:
+```bash
+sudo systemctl status midad            # Check status
+sudo systemctl restart midad           # Restart
+sudo journalctl -u midad -f           # View logs
+./scripts/git_push_all.sh             # Sync to GitHub
+```
+
+### File Locations
+
+**Local PC**:
+```
+~/Inventory-Tracker/
+  ├── app.py
+  ├── data/midad.db    ← Local database
+  └── ...
+```
+
+**Production VM**:
+```
+/opt/midad/
+  ├── app.py
+  ├── data/midad.db    ← Production database
+  ├── scripts/
+  └── logs/
+```
+
+### URLs
+
+**Local**: `http://localhost:8501`  
+**Production**: `http://34.44.149.243:8501`  
+**GitHub**: `https://github.com/labrijisaad/Inventory-Tracker/tree/test/saad_labri`  
+**GCP Console**: `https://console.cloud.google.com/compute/instances`
+
+---
+
+## 🎯 Quick Checklist
+
+**Before Committing**:
+```
+✅ Code works locally
+✅ No errors in console
+✅ Tested main functionality
+✅ Meaningful commit message
+```
+
+**Before Deploying**:
+```
+✅ Code pushed to GitHub
+✅ Tested locally with production database
+✅ Aware of what's changing
+✅ Ready to rollback if needed
+```
+
+**After Deploying**:
+```
+✅ Check service status
+✅ View recent logs
+✅ Test in browser
+✅ Monitor for 5-10 minutes
+```
+
+---
+
+## 🎉 Summary
+
+**Your development flow**:
+
+```
+1. git pull               # Get latest
+2. uv run streamlit       # Test locally
+3. Make changes           # Code!
+4. git commit + push      # Save
+5. SSH + deploy.sh        # Deploy
+6. Verify in browser      # Test
+```
+
+**Simple!** 🚀
+
+---
+
+**Now you can develop confidently!** ✨
+
+**Questions? Check troubleshooting or logs!** 📝
+
+---
+
+**END OF DEVELOPER GUIDE** 🎊
