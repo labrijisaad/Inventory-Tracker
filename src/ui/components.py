@@ -220,7 +220,7 @@ def render_stats_card(stats: dict):
         unsafe_allow_html=True
     )
 
-    # ✅ Row 1 - Books with CLEAR LABELS
+    # ✅ Row 1 - Books with BOTH METRICS
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
@@ -247,7 +247,15 @@ def render_stats_card(stats: dict):
                 </div>
                 <div style="color: rgba(255,255,255,0.75); font-size: 8px; font-weight: 600; 
                             letter-spacing: 0.5px; margin-top: 6px; position: relative;">
-                    BOOKS
+                    TITLES
+                </div>
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); position: relative;">
+                    <div style="color: rgba(255,255,255,0.95); font-size: 18px; font-weight: 700;">
+                        {stats['total_stock']}
+                    </div>
+                    <div style="color: rgba(255,255,255,0.75); font-size: 7px; font-weight: 600; letter-spacing: 0.5px;">
+                        TOTAL BOOKS
+                    </div>
                 </div>
             </div>
             """,
@@ -276,7 +284,7 @@ def render_stats_card(stats: dict):
                 </div>
                 <div style="color: rgba(255,255,255,0.75); font-size: 8px; font-weight: 600; 
                             letter-spacing: 0.5px; margin-top: 6px; position: relative;">
-                    BOOKS
+                    TITLES
                 </div>
             </div>
             """,
@@ -345,28 +353,7 @@ def render_stats_card(stats: dict):
             unsafe_allow_html=True,
         )
 
-    # Stock summary with REDUCED dark glassmorphism glow
-    st.markdown(
-        f"""
-        <div style="text-align: center; margin-top: 16px; padding: 14px; 
-                    background: rgba(138, 110, 255, 0.1); 
-                    backdrop-filter: blur(20px);
-                    border-radius: 12px; 
-                    border: 2px solid rgba(138, 110, 255, 0.3);
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-                                0 0 20px rgba(138, 110, 255, 0.1);">
-            <p style="margin: 0; color: #b8b8ff; font-size: 11px; font-weight: 700;">
-                📦 Total Stock: <strong style="background: linear-gradient(135deg, #b8b8ff 0%, #8a6eff 100%);
-                                               -webkit-background-clip: text;
-                                               -webkit-text-fill-color: transparent;
-                                               background-clip: text;
-                                               font-size: 16px; font-weight: 900;
-                                               filter: drop-shadow(0 0 4px rgba(138, 110, 255, 0.4));">{stats['total_stock']}</strong> books
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # ❌ REMOVED: Stock summary (now shown in first card)
 
 
 def render_page_header(title: str, subtitle: str, icon: str = "📚"):

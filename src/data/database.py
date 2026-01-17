@@ -483,6 +483,106 @@ def save_books_bulk(books_data: list[dict], filter_type: Optional[str] = None) -
         return False, f"❌ Error: {str(e)}"
 
 
+def restock_book(book_data: dict, quantity_to_add: int, is_existing: bool) -> tuple[bool, str, str]:
+    """
+    Add stock to existing book or create new book.
+    
+    Args:
+        book_data: Dictionary with book information
+        quantity_to_add: How many copies to add
+        is_existing: True if updating existing book, False if creating new
+    
+    Returns:
+        (success, message, book_id)
+    """
+    try:
+        with Session(get_engine()) as session:
+            if is_existing:
+                # ✅ UPDATE EXISTING BOOK
+                book_id = book_data['id']
+                book = session.get(Book, book_id)
+
+                if not book:
+                    return False, f"❌ Book {book_id} not found", book_id
+
+                # Update stock
+                old_stock = book.stock
+                book.stock += quantity_to_add
+
+                # Update other fields (user may have changed them)
+                book.title = book_data['title']
+                book.author = book_data['author']
+                book.genre = book_data['genre']
+                book.buy_price = book_data['buy_price']
+                book.target_price = book_data['target_price']
+                book.notes = book_data['notes']
+
+                session.commit()
+
+                return True, (
+                    f"✅ Restocked {book_id}!\n\n"
+                    f"📦 Added {quantity_to_add} copies ({old_stock} → {book.stock})\n"
+                    f"💰 Buy price: €{book.buy_price:.2f}"
+                ), book_id
+
+            else:
+                # ✅ CREATE NEW BOOK
+                # Generate new ID if not provided
+                if book_data['id']:
+                    new_id = book_data['id']
+                    # Check if ID already exists
+                    existing = session.get(Book, new_id)
+                    if existing:
+                        return False, f"❌ Book ID {new_id} already exists!", new_id
+                else:
+                    new_id = generate_book_id()
+
+                # Create new book
+                new_book = Book(
+                    id=new_id,
+                    title=book_data['title'],
+                    author=book_data['author'],
+                    genre=book_data['genre'],
+                    buy_price=book_data['buy_price'],
+                    target_price=book_data['target_price'],
+                    stock=quantity_to_add,  # Initial stock
+                    notes=book_data['notes']
+                )
+
+                session.add(new_book)
+                session.commit()
+
+                return True, (
+                    f"✅ Created new book {new_id}!\n\n"
+                    f"📦 Initial stock: {quantity_to_add} copies\n"
+                    f"💰 Buy price: €{new_book.buy_price:.2f}"
+                ), new_id
+
+    except Exception as e:
+        return False, f"❌ Error: {str(e)}", ""
+
+def get_book_by_id(book_id: str) -> dict | None:
+    """Get a single book by ID."""
+    try:
+        with Session(get_engine()) as session:
+            book = session.get(Book, book_id)
+            if book:
+                return {
+                    'id': book.id,
+                    'title': book.title,
+                    'author': book.author,
+                    'genre': book.genre,
+                    'buy_price': book.buy_price,
+                    'target_price': book.target_price,
+                    'stock': book.stock,
+                    'notes': book.notes,
+                    'created_at': book.created_at
+                }
+            return None
+    except Exception as e:
+        print(f"Error getting book: {e}")
+        return None
+
 # ============================================================================
 # SALE OPERATIONS
 # ============================================================================

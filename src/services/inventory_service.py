@@ -31,26 +31,35 @@ def render_inventory_page():
     )
 
     render_info_banner(
-        "💡 Books with stock = 0 automatically stop appearing in Active tab",
+        "Books with stock = 0 goes to 🔄 Restock tab",
         type="info"
     )
 
+    # Get sold-out count for tab label
+    sold_out_books = get_books("sold")
+    sold_out_count = len(sold_out_books)
+
     # Tabs
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         f"📦 Active Inventory ({stats['active_count']})",
+        f"🔄 Restock ({sold_out_count})",
         "💰 Sales History",
         "📊 Book Performance"
     ])
 
     with tab1:
-        st.caption("📦 Books currently in stock - Add and manage your inventory")
+        st.caption("📦 Books currently in stock")
         _render_active_inventory_table()
 
     with tab2:
+        st.caption("🔄 Add stock to sold-out books or create new books")
+        _render_restock_tab()
+
+    with tab3:
         st.caption("💰 Complete sales transaction history")
         _render_sales_history_table()
 
-    with tab3:
+    with tab4:
         st.caption("📊 Lifetime statistics for all books")
         _render_book_performance_table()
 
@@ -135,9 +144,402 @@ def _render_active_inventory_table():
     if books:
         st.caption("💡 Tip: Edit cells directly, add rows with '+', then click Save")
 
+# ============================================================================
+# TAB 2: RESTOCK (IMPROVED UI WITH 3 CLEAR OPTIONS)
+# ============================================================================
+def _render_restock_tab():
+    """Render improved restock form with 3 clear options."""
+    from src.data.database import restock_book
+
+    # Get all books for reference
+    all_books = get_books()
+    sold_out_books = [b for b in all_books if b['stock'] == 0]
+    active_books = [b for b in all_books if b['stock'] > 0]
+
+    # ✅ MAIN INSTRUCTION
+    st.markdown(
+        """
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                    padding: 20px; border-radius: 12px; border-left: 4px solid #667eea; margin-bottom: 20px;">
+            <h3 style="color: #b8b8ff; margin: 0 0 10px 0;">📦 What would you like to do?</h3>
+            <p style="color: #9ca3af; margin: 0; font-size: 14px;">
+                Choose one of the three options below to manage your inventory
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ✅ THREE CLEAR OPTIONS (RADIO BUTTONS)
+    action_mode = st.radio(
+        "Select action:",
+        [
+            "🔄 Restock a sold-out book",
+            "📦 Add stock to existing book",
+            "✨ Create a brand new book"
+        ],
+        key="restock_action_mode",
+        help="Choose what you want to do"
+    )
+
+    st.markdown("---")
+
+    # ============================================================================
+    # OPTION 1: RESTOCK SOLD-OUT BOOK
+    # ============================================================================
+    if action_mode == "🔄 Restock a sold-out book":
+        st.markdown("### 🔄 Restock Sold-Out Book")
+        st.caption("💡 Select a book that's completely out of stock to replenish inventory")
+
+        if not sold_out_books:
+            st.success("✅ Great news! No books are sold out")
+            st.info("💡 All your books are currently in stock")
+            return
+
+        # Show sold-out count
+        st.info(f"📦 You have **{len(sold_out_books)} sold-out book(s)** ready to restock")
+
+        # Dropdown to select book
+        book_options = {
+            f"📕 {b['id']} - {b['title'][:40]}": b['id']
+            for b in sold_out_books
+        }
+        book_options = {"Select a book...": None, **book_options}
+
+        selected_display = st.selectbox(
+            "Choose book:",
+            list(book_options.keys()),
+            key="soldout_select"
+        )
+
+        selected_book_id = book_options[selected_display]
+
+        if not selected_book_id:
+            st.warning("👆 Please select a book from the list above")
+
+            # Show preview of sold-out books
+            with st.expander(f"📋 View all {len(sold_out_books)} sold-out books", expanded=False):
+                for book in sold_out_books:
+                    st.markdown(f"- **{book['id']}** - {book['title']} (€{book['buy_price']:.2f})")
+            return
+
+        # Get selected book
+        existing_book = next((b for b in sold_out_books if b['id'] == selected_book_id), None)
+
+        # Show book details
+        st.success(f"✅ Selected: **{existing_book['title']}** by {existing_book['author']}")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**📖 Current Details:**")
+            st.caption(f"🆔 ID: `{existing_book['id']}`")
+            st.caption(f"✍️ Author: {existing_book['author']}")
+            st.caption(f"📚 Genre: {existing_book['genre']}")
+            st.caption(f"💰 Current buy price: €{existing_book['buy_price']:.2f}")
+
+        with col2:
+            st.markdown("**💵 Update Pricing (Optional):**")
+            st.caption("💡 Leave unchanged if price hasn't changed")
+
+            new_buy_price = st.number_input(
+                "New buy price (€)",
+                min_value=0.0,
+                value=float(existing_book['buy_price']),
+                step=0.25,
+                key="soldout_buy_price",
+                help="Update if your supplier changed prices"
+            )
+
+            new_target_price = st.number_input(
+                "Target price (€)",
+                min_value=0.0,
+                value=float(existing_book['target_price']),
+                step=0.25,
+                key="soldout_target_price"
+            )
+
+        st.markdown("---")
+
+        # Quantity input
+        st.markdown("### 📦 How many copies to add?")
+        quantity = st.number_input(
+            "Quantity",
+            min_value=1,
+            value=10,
+            step=1,
+            key="soldout_qty",
+            help="How many copies did you buy?"
+        )
+
+        st.caption(f"→ After restocking: **{existing_book['stock']} + {quantity} = {existing_book['stock'] + quantity}** copies")
+
+        st.markdown("---")
+
+        # Submit button
+        if st.button("✅ Restock This Book", type="primary", width='stretch', key="submit_soldout"):
+            book_data = {
+                'id': existing_book['id'],
+                'title': existing_book['title'],
+                'author': existing_book['author'],
+                'genre': existing_book['genre'],
+                'buy_price': new_buy_price,
+                'target_price': new_target_price,
+                'notes': existing_book['notes']
+            }
+
+            with st.spinner("Restocking..."):
+                success, msg, book_id = restock_book(book_data, quantity, is_existing=True)
+                if success:
+                    show_success_toast(f"Restocked {book_id}!")
+                    st.success(msg)
+                    st.balloons()
+                    time.sleep(1.5)
+                    st.rerun()
+                else:
+                    show_error_toast(msg)
+                    st.error(msg)
+
+    # ============================================================================
+    # OPTION 2: ADD STOCK TO EXISTING BOOK
+    # ============================================================================
+    elif action_mode == "📦 Add stock to existing book":
+        st.markdown("### 📦 Add Stock to Existing Book")
+        st.caption("💡 Add more copies to any book in your inventory (even if already in stock)")
+
+        if not all_books:
+            st.info("📭 No books in database. Create your first book below!")
+            return
+
+        # Manual ID entry
+        st.markdown("**🆔 Enter Book ID:**")
+        manual_id = st.text_input(
+            "Book ID",
+            placeholder="e.g., BOOK-001",
+            key="existing_book_id",
+            help="Type the exact book ID"
+        )
+
+        if not manual_id:
+            st.info("👆 Enter a book ID above (e.g., BOOK-001)")
+
+            # Show all books as reference
+            with st.expander(f"📋 View all {len(all_books)} books for reference", expanded=False):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**Active Books:**")
+                    for book in active_books[:10]:
+                        st.caption(f"📗 {book['id']} - {book['title'][:30]} (Stock: {book['stock']})")
+                with col2:
+                    st.markdown("**Sold Out Books:**")
+                    for book in sold_out_books[:10]:
+                        st.caption(f"📕 {book['id']} - {book['title'][:30]} (Stock: 0)")
+            return
+
+        # Find book
+        manual_id = manual_id.strip().upper()
+        existing_book = next((b for b in all_books if b['id'] == manual_id), None)
+
+        if not existing_book:
+            st.error(f"❌ Book `{manual_id}` not found!")
+            st.info("💡 Check the book list below to find the correct ID")
+
+            with st.expander("📋 All Books", expanded=True):
+                for book in all_books[:20]:
+                    st.caption(f"**{book['id']}** - {book['title']}")
+            return
+
+        # Show current details
+        st.success(f"✅ Found: **{existing_book['title']}**")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**📊 Current Status:**")
+            st.caption(f"📦 Current stock: **{existing_book['stock']}** copies")
+            st.caption(f"💰 Buy price: €{existing_book['buy_price']:.2f}")
+            st.caption(f"🎯 Target: €{existing_book['target_price']:.2f}")
+
+        with col2:
+            st.markdown("**💵 Update Pricing (Optional):**")
+            new_buy_price = st.number_input(
+                "New buy price (€)",
+                min_value=0.0,
+                value=float(existing_book['buy_price']),
+                step=0.25,
+                key="existing_buy_price"
+            )
+
+        st.markdown("---")
+
+        # Quantity
+        st.markdown("### 📦 How many copies to add?")
+        quantity = st.number_input(
+            "Quantity to add",
+            min_value=1,
+            value=5,
+            step=1,
+            key="existing_qty"
+        )
+
+        new_total = existing_book['stock'] + quantity
+        st.caption(f"→ New total: **{existing_book['stock']} + {quantity} = {new_total}** copies")
+
+        st.markdown("---")
+
+        # Submit
+        if st.button("✅ Add Stock", type="primary", width='stretch', key="submit_existing"):
+            book_data = {
+                'id': existing_book['id'],
+                'title': existing_book['title'],
+                'author': existing_book['author'],
+                'genre': existing_book['genre'],
+                'buy_price': new_buy_price,
+                'target_price': existing_book['target_price'],
+                'notes': existing_book['notes']
+            }
+
+            with st.spinner("Adding stock..."):
+                success, msg, book_id = restock_book(book_data, quantity, is_existing=True)
+                if success:
+                    show_success_toast(f"Added stock to {book_id}!")
+                    st.success(msg)
+                    st.balloons()
+                    time.sleep(1.5)
+                    st.rerun()
+                else:
+                    show_error_toast(msg)
+                    st.error(msg)
+
+    # ============================================================================
+    # OPTION 3: CREATE NEW BOOK
+    # ============================================================================
+    elif action_mode == "✨ Create a brand new book":
+        st.markdown("### ✨ Create New Book")
+        st.caption("💡 Add a completely new book to your inventory")
+
+        # Optional: Custom ID
+        with st.expander("🆔 Advanced: Set custom book ID (optional)", expanded=False):
+            st.caption("💡 Leave empty to auto-generate next ID (recommended)")
+            custom_id = st.text_input(
+                "Custom ID",
+                placeholder="e.g., BOOK-099",
+                key="new_custom_id",
+                help="Only use this if you need a specific ID format"
+            )
+
+        # Book details form
+        st.markdown("**📝 Book Information:**")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            new_title = st.text_input(
+                "Title *",
+                placeholder="Enter book title",
+                key="new_title",
+                help="Required field"
+            )
+
+            new_author = st.text_input(
+                "Author",
+                placeholder="Enter author name",
+                key="new_author"
+            )
+
+            new_genre = st.selectbox(
+                "Genre",
+                GENRES,
+                key="new_genre"
+            )
+
+        with col2:
+            new_buy_price = st.number_input(
+                "Buy Price (€) *",
+                min_value=0.0,
+                value=0.0,
+                step=0.25,
+                key="new_buy_price",
+                help="How much did you pay?"
+            )
+
+            new_target_price = st.number_input(
+                "Target Selling Price (€)",
+                min_value=0.0,
+                value=0.0,
+                step=0.25,
+                key="new_target_price",
+                help="How much do you want to sell it for?"
+            )
+
+            new_notes = st.text_area(
+                "Notes",
+                placeholder="ISBN, condition, publisher, etc.",
+                key="new_notes",
+                height=80
+            )
+
+        st.markdown("---")
+
+        # Initial stock
+        st.markdown("### 📦 Initial Stock Quantity")
+        new_quantity = st.number_input(
+            "How many copies?",
+            min_value=1,
+            value=1,
+            step=1,
+            key="new_qty",
+            help="How many copies do you have?"
+        )
+
+        st.caption(f"→ New book will start with **{new_quantity}** copies")
+
+        st.markdown("---")
+
+        # Submit
+        col1, col2 = st.columns([3, 1])
+
+        with col1:
+            if st.button("✅ Create Book", type="primary", width='stretch', key="submit_new"):
+                # Validation
+                if not new_title.strip():
+                    st.error("❌ Book title is required")
+                    return
+
+                if new_buy_price <= 0:
+                    st.error("❌ Buy price must be greater than 0")
+                    return
+
+                book_data = {
+                    'id': custom_id.strip().upper() if custom_id else None,
+                    'title': new_title.strip(),
+                    'author': new_author.strip(),
+                    'genre': new_genre,
+                    'buy_price': new_buy_price,
+                    'target_price': new_target_price,
+                    'notes': new_notes.strip()
+                }
+
+                with st.spinner("Creating book..."):
+                    success, msg, book_id = restock_book(book_data, new_quantity, is_existing=False)
+                    if success:
+                        show_success_toast(f"Created {book_id}!")
+                        st.success(msg)
+                        st.balloons()
+                        time.sleep(1.5)
+                        st.rerun()
+                    else:
+                        show_error_toast(msg)
+                        st.error(msg)
+
+        with col2:
+            if st.button("🔄 Reset", width='stretch', key="reset_new"):
+                st.rerun()
+
+
 
 # ============================================================================
-# TAB 2: SALES HISTORY (CHRONOLOGICAL VIEW) - FIXED DATE LOGIC
+# TAB 3: SALES HISTORY (CHRONOLOGICAL VIEW) - FIXED DATE LOGIC
 # ============================================================================
 def _render_sales_history_table():
     """Render chronological sales history with expandable book details."""

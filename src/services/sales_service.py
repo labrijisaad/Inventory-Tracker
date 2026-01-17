@@ -73,6 +73,12 @@ def _render_sale_form(available_books: list[dict]):
     """Render sale input form."""
     render_section_header("Sale Details", "📝")
 
+    if 'sale_form_key' not in st.session_state:
+        st.session_state.sale_form_key = 0
+    
+    if 'refresh_key' not in st.session_state:
+        st.session_state.refresh_key = 0
+
     # ✅ Get current form key (changes after successful submission)
     form_key = st.session_state.sale_form_key
 
@@ -240,10 +246,10 @@ def _render_sale_form(available_books: list[dict]):
                     st.warning(f"⚠️ Only {new_stock} copy/copies of '{selected_book['title']}' remaining!")
 
                 st.balloons()
-                
+
                 st.session_state.sale_form_key += 1
                 st.session_state.refresh_key += 1
-                
+
                 time.sleep(1.5)
                 st.rerun()
             else:
@@ -465,10 +471,21 @@ def _delete_single_sale_with_prefix(sale_id_input: str):
 
 def _render_bundle_sale_tab(available_books: list[dict]):
     """Render bundle sale tab."""
+
+    # ✅ Initialize ALL form keys at the start
+    if 'sale_form_key' not in st.session_state:
+        st.session_state.sale_form_key = 0
+    
+    if 'bundle_form_key' not in st.session_state:  # ✅ ADD THIS
+        st.session_state.bundle_form_key = 0
+    
+    if 'refresh_key' not in st.session_state:
+        st.session_state.refresh_key = 0
+
     render_section_header("Create Bundle Sale", "🎁")
     st.caption("Sell multiple books in one transaction")
 
-    # ✅ Get current bundle form key
+    # ✅ Now safe to access
     bundle_key = st.session_state.bundle_form_key
 
     # ✅ IMPROVED: Cleaner bundle book display
@@ -632,10 +649,10 @@ def _render_bundle_sale_tab(available_books: list[dict]):
                     show_success_toast(f"Bundle recorded! Profit: €{bundle_calc['profit']:.2f}")
                     st.success(f"✅ {msg}")
                     st.balloons()
-                    
+
                     st.session_state.bundle_form_key += 1
                     st.session_state.refresh_key += 1
-                    
+
                     time.sleep(1.5)
                     st.rerun()
                 else:

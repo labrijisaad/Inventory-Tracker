@@ -599,7 +599,7 @@ def _render_inventory_health(stats, all_books):
 
     # Get all sales for velocity calculation
     all_sales = get_sales()
-    
+
     # Calculate book performance
     book_stats = {}
     for sale in all_sales:
@@ -610,10 +610,10 @@ def _render_inventory_health(stats, all_books):
                 'last_sale_date': None,
                 'num_sales': 0
             }
-        
+
         book_stats[book_id]['total_sold'] += sale['qty']
         book_stats[book_id]['num_sales'] += 1
-        
+
         # Track most recent sale
         try:
             sale_date_str = sale['date']
@@ -623,7 +623,7 @@ def _render_inventory_health(stats, all_books):
                 sale_date = datetime.strptime(sale_date_str.split()[0], "%Y-%m-%d")
             else:
                 sale_date = datetime.strptime(sale_date_str, "%Y-%m-%d")
-            
+
             if book_stats[book_id]['last_sale_date'] is None or sale_date > book_stats[book_id]['last_sale_date']:
                 book_stats[book_id]['last_sale_date'] = sale_date
         except:
@@ -639,12 +639,12 @@ def _render_inventory_health(stats, all_books):
         book_id = book['id']
         stock = book['stock']
         stats_data = book_stats.get(book_id, {'total_sold': 0, 'num_sales': 0, 'last_sale_date': None})
-        
+
         # Calculate days since last sale
         days_since_sale = None
         if stats_data['last_sale_date']:
             days_since_sale = (datetime.now() - stats_data['last_sale_date']).days
-        
+
         book_info = {
             'id': book_id,
             'title': book['title'],
@@ -656,7 +656,7 @@ def _render_inventory_health(stats, all_books):
             'days_since_sale': days_since_sale,
             'is_selling': stats_data['total_sold'] > 0
         }
-        
+
         if stock == 0:
             critical_stock.append(book_info)
         elif stock == 1:
@@ -669,11 +669,11 @@ def _render_inventory_health(stats, all_books):
             monitor_stock.append(book_info)
 
     # ✅ RENDER CATEGORIZED SECTIONS
-    
+
     # 1. CRITICAL - Sold Out
     if critical_stock:
         st.error(f"🚨 **Critical: {len(critical_stock)} book(s) sold out**")
-        
+
         with st.expander(f"📋 View {len(critical_stock)} Sold Out Book(s)", expanded=False):
             for book in critical_stock[:10]:  # Show top 10
                 # Build the info line
@@ -681,12 +681,12 @@ def _render_inventory_health(stats, all_books):
                     f"Sold: {book['total_sold']} copies",
                     f"💰 Cost: €{book['buy_price']:.2f}"
                 ]
-                
+
                 if book['days_since_sale'] is not None:
                     info_parts.append(f"🕒 Last sale: {book['days_since_sale']} days ago")
-                
+
                 info_line = " • ".join(info_parts)
-                
+
                 st.markdown(
                     f"""
                     <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; 
@@ -697,12 +697,12 @@ def _render_inventory_health(stats, all_books):
                     """,
                     unsafe_allow_html=True
                 )
-    
+
     # 2. URGENT - Low Stock + Selling Well
     if urgent_restock:
         st.warning(f"⚠️ **Urgent Restock: {len(urgent_restock)} book(s) need immediate attention**")
         st.caption("These books have only 1 copy left and are selling well")
-        
+
         with st.expander(f"🔥 View {len(urgent_restock)} Hot-Selling Book(s)", expanded=True):
             for book in urgent_restock:
                 # Determine urgency badge
@@ -715,7 +715,7 @@ def _render_inventory_health(stats, all_books):
                 else:
                     urgency = "📈 Active"
                     color = "#3b82f6"
-                
+
                 st.markdown(
                     f"""
                     <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px; 
@@ -740,12 +740,12 @@ def _render_inventory_health(stats, all_books):
                     """,
                     unsafe_allow_html=True
                 )
-    
+
     # 3. LOW STOCK - But Not Urgent
     if low_stock:
         st.info(f"💡 **Monitor: {len(low_stock)} book(s) with low stock**")
         st.caption("These books have 1 copy left but aren't selling fast")
-        
+
         with st.expander(f"📊 View {len(low_stock)} Book(s) to Monitor", expanded=False):
             for book in low_stock[:10]:  # Show top 10
                 # Build status line
@@ -756,7 +756,7 @@ def _render_inventory_health(stats, all_books):
                     if book['days_since_sale'] is not None:
                         status_parts.append(f"Last sale: {book['days_since_sale']} days ago")
                     status_line = " • ".join(status_parts)
-                
+
                 st.markdown(
                     f"""
                     <div style="background: rgba(59, 130, 246, 0.05); padding: 10px; border-radius: 6px; 
@@ -767,7 +767,7 @@ def _render_inventory_health(stats, all_books):
                     """,
                     unsafe_allow_html=True
                 )
-    
+
     # 4. WARNING STOCK (2 copies)
     if monitor_stock:
         with st.expander(f"⚡ {len(monitor_stock)} book(s) with 2 copies (approaching low stock)", expanded=False):
@@ -782,7 +782,7 @@ def _render_inventory_health(stats, all_books):
                     """,
                     unsafe_allow_html=True
                 )
-    
+
     # ✅ ALL CLEAR MESSAGE
     if not critical_stock and not urgent_restock and not low_stock:
         st.success("✅ **All stock levels healthy!**")
@@ -863,7 +863,7 @@ def _render_profit_analysis(grouped_sales, all_books):
 
     # Filter out empty buckets and sort by range (lowest to highest)
     active_buckets = {k: v for k, v in margin_buckets.items() if v > 0}
-    
+
     # ✅ Sort by margin range (numerical order)
     def sort_key(item):
         key = item[0]
@@ -872,7 +872,7 @@ def _render_profit_analysis(grouped_sales, all_books):
         else:
             # Extract first number: "5 to 10%" → 5
             return int(key.split()[0])
-    
+
     sorted_buckets = dict(sorted(active_buckets.items(), key=sort_key))
 
     # ✅ NATIVE BAR CHART WITH BETTER TITLE
@@ -963,7 +963,7 @@ def _render_profit_analysis(grouped_sales, all_books):
             # Header row
             st.markdown(f"**{icon} #{i} {title}**")
             st.caption(f"`{display_date}` • {s.get('platform', 'Unknown')}")
-            
+
             # Metrics row (3 columns)
             col1, col2, col3 = st.columns(3)
 

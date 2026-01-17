@@ -1,37 +1,9 @@
 [
   {
-    "id": 1,
-    "title": "test",
-    "content": "tetes",
-    "date": "2026-01-16 21:25:43",
-    "files": []
-  },
-  {
     "id": 2,
     "title": "Bn8",
     "content": "Bn8",
     "date": "2026-01-16 22:48:16",
-    "files": []
-  },
-  {
-    "id": 3,
-    "title": "Bn8",
-    "content": "**kitab** ",
-    "date": "2026-01-16 22:49:26",
-    "files": []
-  },
-  {
-    "id": 4,
-    "title": "tedt",
-    "content": "ok",
-    "date": "2026-01-16 23:36:19",
-    "files": []
-  },
-  {
-    "id": 5,
-    "title": "refresh",
-    "content": "- correct when i add a sale, sales should refresh\n- see how i can books that when out of stock ( maybe add in inventory a way to reprovision stock\n- add bock list\n",
-    "date": "2026-01-16 23:39:34",
     "files": []
   }
 ]
