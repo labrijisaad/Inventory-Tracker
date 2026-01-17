@@ -48,19 +48,15 @@ def render_inventory_page():
     ])
 
     with tab1:
-        st.caption("📦 Books currently in stock")
         _render_active_inventory_table()
 
     with tab2:
-        st.caption("🔄 Add stock to sold-out books or create new books")
         _render_restock_tab()
 
     with tab3:
-        st.caption("💰 Complete sales transaction history")
         _render_sales_history_table()
 
     with tab4:
-        st.caption("📊 Lifetime statistics for all books")
         _render_book_performance_table()
 
 
@@ -89,23 +85,26 @@ def _render_active_inventory_table():
         ])
     else:
         st.success(f"📊 {len(books)} active book(s)")
-        df = pd.DataFrame(books)
+
+        # ✅ SORT BY STOCK (ASCENDING - LOW STOCK FIRST)
+        books_sorted = sorted(books, key=lambda x: x['stock'], reverse=True)
+        df = pd.DataFrame(books_sorted)
 
     # Column configuration
     column_config = {
         "id": st.column_config.TextColumn("🆔 ID", width="small", disabled=True),
-        "title": st.column_config.TextColumn("📖 Title", width="large", required=True),
-        "author": st.column_config.TextColumn("✍️ Author", width="medium"),
+        "title": st.column_config.TextColumn("📖 Title", width="medium", required=True),
+        "stock": st.column_config.NumberColumn("📦 Stock", min_value=0, step=1, width="small"),
+        "author": st.column_config.TextColumn("✍️ Author", width="small"),
         "genre": st.column_config.SelectboxColumn("Genre", options=GENRES, width="small"),
         "buy_price": st.column_config.NumberColumn("Buy €", format="%.2f", min_value=0, width="small"),
         "target_price": st.column_config.NumberColumn("Target €", format="%.2f", min_value=0, width="small"),
-        "stock": st.column_config.NumberColumn("📦 Stock", min_value=0, step=1, width="small"),
         "status": None,
         "notes": st.column_config.TextColumn("📝 Notes", width="medium"),
         "created_at": None,
     }
 
-    column_order = ["id", "title", "author", "genre", "buy_price", "target_price", "stock", "notes"]
+    column_order = ["id", "title", "stock", "genre", "buy_price", "target_price", "author","notes"]
 
     # Data editor
     edited = st.data_editor(
@@ -144,6 +143,94 @@ def _render_active_inventory_table():
     if books:
         st.caption("💡 Tip: Edit cells directly, add rows with '+', then click Save")
 
+        # ============================================================================
+        # ✅ NEW: QUICK STOCK REFERENCE (COLLAPSIBLE)
+        # ============================================================================
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        with st.expander("📦 **Quick Stock Reference** - View book details", expanded=False):
+            st.caption("💡 Select a book to see full details • Sorted by stock (lowest first)")
+
+            # Create book selection dropdown
+            book_options = {
+                f"📚 {b['id']} - {b['title'][:40]} ({b['stock']} in stock)": b['id']
+                for b in books_sorted
+            }
+            book_options = {"Select a book...": None, **book_options}
+
+            selected_display = st.selectbox(
+                "Choose book:",
+                list(book_options.keys()),
+                key="quick_ref_book_select",
+                label_visibility="collapsed"
+            )
+
+            selected_book_id = book_options[selected_display]
+
+            if selected_book_id:
+                # Get selected book details
+                selected_book = next((b for b in books_sorted if b['id'] == selected_book_id), None)
+
+                if selected_book:
+                    # Display book details in a nice card
+                    st.markdown(
+                        f"""
+                        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+                                    padding: 20px; border-radius: 12px; border-left: 4px solid #667eea; margin-top: 15px;">
+                            <h3 style="color: #b8b8ff; margin: 0 0 15px 0;">📖 {selected_book['title']}</h3>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                    # Two-column layout for details
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        st.markdown("**📊 Inventory Info:**")
+                        st.caption(f"🆔 **Book ID:** `{selected_book['id']}`")
+                        st.caption(f"📦 **Current Stock:** `{selected_book['stock']}` copies")
+                        st.caption(f"📚 **Genre:** {selected_book['genre']}")
+                        st.caption(f"✍️ **Author:** {selected_book['author'] if selected_book['author'] else 'Not specified'}")
+
+                        # Stock status indicator
+                        if selected_book['stock'] <= 1:
+                            st.error("🔴 **Critical Stock** - Restock needed!")
+                        elif selected_book['stock'] <= 2:
+                            st.warning("🟡 **Low Stock** - Consider restocking")
+                        else:
+                            st.success("🟢 **Good Stock Level**")
+
+                    with col2:
+                        st.markdown("**💰 Pricing Info:**")
+                        st.caption(f"💵 **Buy Price:** €{selected_book['buy_price']:.2f}")
+                        st.caption(f"🎯 **Target Price:** €{selected_book['target_price']:.2f}")
+
+                        # Calculate potential profit per book
+                        if selected_book['target_price'] > 0:
+                            potential_profit = selected_book['target_price'] - selected_book['buy_price']
+                            if potential_profit > 0:
+                                margin = (potential_profit / selected_book['target_price']) * 100
+                                st.caption(f"📈 **Potential Profit:** €{potential_profit:.2f} ({margin:.1f}% margin)")
+                            else:
+                                st.caption(f"⚠️ **Warning:** Selling below cost (€{abs(potential_profit):.2f} loss)")
+
+                        # Total inventory value
+                        inventory_value = selected_book['stock'] * selected_book['buy_price']
+                        potential_revenue = selected_book['stock'] * selected_book['target_price']
+                        st.caption(f"💼 **Total Invested:** €{inventory_value:.2f}")
+                        if selected_book['target_price'] > 0:
+                            st.caption(f"💰 **Potential Revenue:** €{potential_revenue:.2f}")
+
+                    # Notes section (if exists)
+                    if selected_book.get('notes'):
+                        st.markdown("**📝 Notes:**")
+                        st.info(selected_book['notes'])
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+            else:
+                st.info("👆 Select a book from the dropdown above to view details")
+
 # ============================================================================
 # TAB 2: RESTOCK (IMPROVED UI WITH 3 CLEAR OPTIONS)
 # ============================================================================
@@ -162,15 +249,44 @@ def _render_restock_tab():
         <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
                     padding: 20px; border-radius: 12px; border-left: 4px solid #667eea; margin-bottom: 20px;">
             <h3 style="color: #b8b8ff; margin: 0 0 10px 0;">📦 What would you like to do?</h3>
-            <p style="color: #9ca3af; margin: 0; font-size: 14px;">
-                Choose one of the three options below to manage your inventory
-            </p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # ✅ THREE CLEAR OPTIONS (RADIO BUTTONS)
+    # ============================================================================
+    # ✅ NEW: SHOW SOLD-OUT BOOKS LIST FIRST (BEFORE ACTION SELECTION)
+    # ============================================================================
+    if sold_out_books:
+
+        with st.expander(f"📋 View all {len(sold_out_books)} sold-out books", expanded=False):
+            st.caption("💡 Books with 0 stock that need restocking")
+
+            # Display in 2 columns for better readability
+            col1, col2 = st.columns(2)
+
+            mid_point = len(sold_out_books) // 2
+
+            with col1:
+                for book in sold_out_books[:mid_point]:
+                    st.markdown(
+                        f"📕 **{book['id']}** - {book['title'][:35]}"
+                        f"{'...' if len(book['title']) > 35 else ''}"
+                    )
+
+            with col2:
+                for book in sold_out_books[mid_point:]:
+                    st.markdown(
+                        f"📕 **{book['id']}** - {book['title'][:35]}"
+                        f"{'...' if len(book['title']) > 35 else ''}"
+                    )
+    else:
+        st.success("✅ Great news! No books are sold out")
+        st.caption("💡 All your books are currently in stock")
+
+    st.markdown("---")
+
+    # ✅ THREE CLEAR OPTIONS (RADIO BUTTONS) - NOW AFTER THE LIST
     action_mode = st.radio(
         "Select action:",
         [
@@ -192,14 +308,10 @@ def _render_restock_tab():
         st.caption("💡 Select a book that's completely out of stock to replenish inventory")
 
         if not sold_out_books:
-            st.success("✅ Great news! No books are sold out")
             st.info("💡 All your books are currently in stock")
             return
 
-        # Show sold-out count
-        st.info(f"📦 You have **{len(sold_out_books)} sold-out book(s)** ready to restock")
-
-        # Dropdown to select book
+        # Dropdown to select book (removed redundant count message)
         book_options = {
             f"📕 {b['id']} - {b['title'][:40]}": b['id']
             for b in sold_out_books
@@ -216,11 +328,6 @@ def _render_restock_tab():
 
         if not selected_book_id:
             st.warning("👆 Please select a book from the list above")
-
-            # Show preview of sold-out books
-            with st.expander(f"📋 View all {len(sold_out_books)} sold-out books", expanded=False):
-                for book in sold_out_books:
-                    st.markdown(f"- **{book['id']}** - {book['title']} (€{book['buy_price']:.2f})")
             return
 
         # Get selected book
@@ -705,10 +812,10 @@ def _render_sales_history_table():
 
 
 # ============================================================================
-# TAB 3: BOOK PERFORMANCE (ANALYTICS)
+# TAB 4: BOOK PERFORMANCE (ADVANCED ANALYTICS)
 # ============================================================================
 def _render_book_performance_table():
-    """Render lifetime performance statistics for all books."""
+    """Render advanced performance analytics with actionable insights."""
 
     performance = get_book_performance_stats()
 
@@ -716,112 +823,531 @@ def _render_book_performance_table():
         st.info("📭 No books in database")
         return
 
-    # Filter controls
-    col1, col2, col3 = st.columns([1, 1, 2])
-    with col1:
-        status_filter = st.selectbox(
-            "Status Filter",
-            ["All", "Active", "Sold Out", "Never Sold"],
-            key="perf_status_filter"
-        )
-    with col2:
-        sort_by = st.selectbox(
-            "Sort By",
-            ["Total Sold", "Revenue", "Profit", "Margin %", "Book ID"],
-            key="perf_sort"
-        )
+    # ============================================================================
+    # 📊 OVERVIEW METRICS
+    # ============================================================================
+    st.markdown("### 📊 Performance Overview")
 
-    # Apply filters
-    filtered = performance
-    if status_filter == "Active":
-        filtered = [b for b in filtered if b['status'] == 'Active']
-    elif status_filter == "Sold Out":
-        filtered = [b for b in filtered if b['status'] == 'Sold Out']
-    elif status_filter == "Never Sold":
-        filtered = [b for b in filtered if b['total_sold'] == 0]
-
-    # Apply sorting
-    sort_keys = {
-        "Total Sold": lambda x: x['total_sold'],
-        "Revenue": lambda x: x['total_revenue'],
-        "Profit": lambda x: x['total_profit'],
-        "Margin %": lambda x: x['avg_margin'],
-        "Book ID": lambda x: x['id']
-    }
-    filtered.sort(key=sort_keys[sort_by], reverse=(sort_by != "Book ID"))
-
-    if not filtered:
-        st.info(f"📭 No books match filter: {status_filter}")
-        return
-
-    st.success(f"📊 Analyzing {len(filtered)} book(s)")
-
-    # Summary metrics
-    total_books = len(filtered)
-    books_with_sales = len([b for b in filtered if b['total_sold'] > 0])
-    total_sold_qty = sum(b['total_sold'] for b in filtered)
-    total_rev = sum(b['total_revenue'] for b in filtered)
-    total_prof = sum(b['total_profit'] for b in filtered)
+    total_books = len(performance)
+    books_with_sales = [b for b in performance if b['total_sold'] > 0]
+    active_books = [b for b in performance if b['status'] == 'Active']
 
     col1, col2, col3, col4, col5 = st.columns(5)
+
     with col1:
         st.metric("📚 Total Books", total_books)
+        st.caption("All time inventory")
+
     with col2:
-        st.metric("✅ With Sales", books_with_sales)
+        st.metric("✅ With Sales", len(books_with_sales))
+        sell_through = (len(books_with_sales) / total_books * 100) if total_books > 0 else 0
+        st.caption(f"{sell_through:.0f}% sell-through rate")
+
     with col3:
-        st.metric("📦 Units Sold", total_sold_qty)
+        total_invested = sum(b['current_stock'] * b.get('buy_price', 0) for b in active_books)
+        st.metric("💰 Capital Invested", f"€{total_invested:.2f}")
+        st.caption("In current stock")
+
     with col4:
-        st.metric("💰 Revenue", f"€{total_rev:.2f}")
+        total_profit = sum(b['total_profit'] for b in books_with_sales)
+        st.metric("📈 Total Profit", f"€{total_profit:.2f}")
+        avg_profit = total_profit / len(books_with_sales) if books_with_sales else 0
+        st.caption(f"€{avg_profit:.2f} avg per book")
+
     with col5:
-        st.metric("📈 Profit", f"€{total_prof:.2f}")
+        total_revenue = sum(b['total_revenue'] for b in books_with_sales)
+        avg_margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
+        st.metric("📊 Avg Margin", f"{avg_margin:.1f}%")
+        st.caption("Across all sales")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Performance table
-    df = pd.DataFrame(filtered)
+    # ============================================================================
+    # 🌟 PERFORMANCE CATEGORIES (SMART SEGMENTATION)
+    # ============================================================================
+    st.markdown("### 🌟 Performance Categories")
+    st.caption("💡 Books automatically categorized by sales data and profitability")
 
-    display_df = df[[
-        'id', 'title', 'author', 'status', 'current_stock',
-        'total_sold', 'total_revenue', 'total_profit', 'avg_margin',
-        'num_sales', 'velocity'
-    ]].copy()
+    # Calculate performance categories
+    star_performers = []
+    cash_cows = []
+    rising_stars = []
+    slow_movers = []
+    dead_stock = []
 
-    st.dataframe(
-        display_df,
-        column_config={
-            'id': st.column_config.TextColumn('Book ID', width='small'),
-            'title': st.column_config.TextColumn('Title', width='large'),
-            'author': st.column_config.TextColumn('Author', width='medium'),
-            'status': st.column_config.TextColumn('Status', width='small'),
-            'current_stock': st.column_config.NumberColumn('Stock', width='small'),
-            'total_sold': st.column_config.NumberColumn('Sold', width='small'),
-            'total_revenue': st.column_config.NumberColumn('Revenue', format='€%.2f', width='small'),
-            'total_profit': st.column_config.NumberColumn('Profit', format='€%.2f', width='small'),
-            'avg_margin': st.column_config.NumberColumn('Margin %', format='%.1f%%', width='small'),
-            'num_sales': st.column_config.NumberColumn('# Sales', width='small'),
-            'velocity': st.column_config.NumberColumn('Velocity', format='%.2f', width='small', help='Books sold per day')
-        },
-        hide_index=True,
-        width='stretch'
-    )
+    for book in performance:
+        if book['total_sold'] == 0 and book['status'] == 'Active':
+            dead_stock.append(book)
+        elif book['total_sold'] >= 10 and book['total_profit'] > 50:
+            star_performers.append(book)
+        elif book['velocity'] > 0.5 and book['total_sold'] >= 3:
+            rising_stars.append(book)
+        elif book['total_sold'] > 0 and book['avg_margin'] > 40:
+            cash_cows.append(book)
+        elif book['total_sold'] > 0 and book['velocity'] < 0.2:
+            slow_movers.append(book)
 
-    st.caption("💡 **Velocity** = Books sold per day since first sale")
+    # Display categories in colored cards
+    col1, col2, col3, col4, col5 = st.columns(5)
 
-    # Insights
-    st.markdown("---")
-    st.markdown("**📊 Quick Insights:**")
+    with col1:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 15px; border-radius: 10px; text-align: center; color: white;">
+                <h2 style="margin: 0; font-size: 32px;">🌟</h2>
+                <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">STAR PERFORMERS</p>
+                <h3 style="margin: 5px 0; font-size: 24px;">{len(star_performers)}</h3>
+                <p style="margin: 0; font-size: 11px; opacity: 0.8;">High sales + profit</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Best seller
-    if books_with_sales > 0:
-        best_seller = max(filtered, key=lambda x: x['total_sold'])
-        st.success(f"🥇 **Best Seller**: {best_seller['title']} ({best_seller['total_sold']} sold)")
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                        padding: 15px; border-radius: 10px; text-align: center; color: white;">
+                <h2 style="margin: 0; font-size: 32px;">💰</h2>
+                <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">CASH COWS</p>
+                <h3 style="margin: 5px 0; font-size: 24px;">{len(cash_cows)}</h3>
+                <p style="margin: 0; font-size: 11px; opacity: 0.8;">High margins</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Most profitable
-    if books_with_sales > 0:
-        most_profitable = max(filtered, key=lambda x: x['total_profit'])
-        st.success(f"💰 **Most Profitable**: {most_profitable['title']} (€{most_profitable['total_profit']:.2f} profit)")
+    with col3:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                        padding: 15px; border-radius: 10px; text-align: center; color: white;">
+                <h2 style="margin: 0; font-size: 32px;">🚀</h2>
+                <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">RISING STARS</p>
+                <h3 style="margin: 5px 0; font-size: 24px;">{len(rising_stars)}</h3>
+                <p style="margin: 0; font-size: 11px; opacity: 0.8;">Fast moving</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Never sold
-    never_sold = [b for b in filtered if b['total_sold'] == 0 and b['status'] == 'Active']
-    if never_sold:
-        st.warning(f"⚠️ **{len(never_sold)} book(s)** have never sold (consider pricing/marketing)")
+    with col4:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+                        padding: 15px; border-radius: 10px; text-align: center; color: white;">
+                <h2 style="margin: 0; font-size: 32px;">⚠️</h2>
+                <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">SLOW MOVERS</p>
+                <h3 style="margin: 5px 0; font-size: 24px;">{len(slow_movers)}</h3>
+                <p style="margin: 0; font-size: 11px; opacity: 0.8;">Low velocity</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col5:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+                        padding: 15px; border-radius: 10px; text-align: center; color: #333;">
+                <h2 style="margin: 0; font-size: 32px;">🔴</h2>
+                <p style="margin: 5px 0; font-size: 12px; opacity: 0.9;">DEAD STOCK</p>
+                <h3 style="margin: 5px 0; font-size: 24px;">{len(dead_stock)}</h3>
+                <p style="margin: 0; font-size: 11px; opacity: 0.8;">Never sold</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # 📈 VISUAL ANALYTICS
+    # ============================================================================
+    st.markdown("### 📈 Visual Insights")
+
+    tab_charts, tab_top10, tab_categories = st.tabs([
+        "📊 Revenue & Profit",
+        "🏆 Top 10 Performers",
+        "🔍 Category Details"
+    ])
+
+    # TAB 1: Revenue & Profit Charts
+    with tab_charts:
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**💰 Revenue Contribution**")
+            if books_with_sales:
+                # Top 10 by revenue
+                top_revenue = sorted(books_with_sales, key=lambda x: x['total_revenue'], reverse=True)[:10]
+                revenue_data = pd.DataFrame([
+                    {'Book': b['title'][:30], 'Revenue': b['total_revenue']}
+                    for b in top_revenue
+                ])
+                st.bar_chart(revenue_data.set_index('Book'))
+            else:
+                st.info("No sales data yet")
+
+        with col2:
+            st.markdown("**📈 Profit Contribution**")
+            if books_with_sales:
+                # Top 10 by profit
+                top_profit = sorted(books_with_sales, key=lambda x: x['total_profit'], reverse=True)[:10]
+                profit_data = pd.DataFrame([
+                    {'Book': b['title'][:30], 'Profit': b['total_profit']}
+                    for b in top_profit
+                ])
+                st.bar_chart(profit_data.set_index('Book'))
+            else:
+                st.info("No sales data yet")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Margin distribution
+        st.markdown("**📊 Profit Margin Distribution**")
+        if books_with_sales:
+            margin_ranges = {
+                '0-20%': len([b for b in books_with_sales if 0 <= b['avg_margin'] < 20]),
+                '20-40%': len([b for b in books_with_sales if 20 <= b['avg_margin'] < 40]),
+                '40-60%': len([b for b in books_with_sales if 40 <= b['avg_margin'] < 60]),
+                '60-80%': len([b for b in books_with_sales if 60 <= b['avg_margin'] < 80]),
+                '80-100%': len([b for b in books_with_sales if b['avg_margin'] >= 80]),
+            }
+            margin_df = pd.DataFrame(list(margin_ranges.items()), columns=['Margin Range', 'Books'])
+            st.bar_chart(margin_df.set_index('Margin Range'))
+        else:
+            st.info("No sales data yet")
+
+    # TAB 2: Top 10 Performers
+    with tab_top10:
+        if not books_with_sales:
+            st.info("No sales data yet")
+        else:
+            col1, col2 = st.columns([2, 1])
+
+            with col1:
+                sort_metric = st.radio(
+                    "Sort by:",
+                    ["Total Sold", "Revenue", "Profit", "Margin %"],
+                    horizontal=True
+                )
+
+            sort_keys = {
+                "Total Sold": lambda x: x['total_sold'],
+                "Revenue": lambda x: x['total_revenue'],
+                "Profit": lambda x: x['total_profit'],
+                "Margin %": lambda x: x['avg_margin']
+            }
+
+            top_10 = sorted(books_with_sales, key=sort_keys[sort_metric], reverse=True)[:10]
+
+            for idx, book in enumerate(top_10, 1):
+                medal = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else f"#{idx}"
+
+                with st.expander(
+                    f"{medal} **{book['title']}** | "
+                    f"Sold: {book['total_sold']} | "
+                    f"Revenue: €{book['total_revenue']:.2f} | "
+                    f"Profit: €{book['total_profit']:.2f}",
+                    expanded=(idx <= 3)
+                ):
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+                        st.caption("**📊 Sales Data**")
+                        st.write(f"🆔 ID: `{book['id']}`")
+                        st.write(f"📦 Sold: **{book['total_sold']}** units")
+                        st.write(f"🔢 Transactions: **{book['num_sales']}**")
+                        st.write(f"📦 Stock Left: **{book['current_stock']}**")
+
+                    with col2:
+                        st.caption("**💰 Financial**")
+                        st.write(f"💵 Revenue: **€{book['total_revenue']:.2f}**")
+                        st.write(f"📈 Profit: **€{book['total_profit']:.2f}**")
+                        st.write(f"📊 Margin: **{book['avg_margin']:.1f}%**")
+                        roi = (book['total_profit'] / (book['total_sold'] * book.get('buy_price', 1)) * 100) if book.get('buy_price', 0) > 0 else 0
+                        st.write(f"💎 ROI: **{roi:.0f}%**")
+
+                    with col3:
+                        st.caption("**⚡ Performance**")
+                        st.write(f"🚀 Velocity: **{book['velocity']:.2f}** books/day")
+                        avg_per_sale = book['total_sold'] / book['num_sales'] if book['num_sales'] > 0 else 0
+                        st.write(f"📦 Avg per sale: **{avg_per_sale:.1f}**")
+
+                        # Status indicator
+                        if book['velocity'] > 0.5:
+                            st.success("🔥 **Hot seller!**")
+                        elif book['velocity'] > 0.2:
+                            st.info("✅ **Steady sales**")
+                        else:
+                            st.warning("⚠️ **Slow mover**")
+
+    # TAB 3: Category Details
+    with tab_categories:
+        category_select = st.selectbox(
+            "Select category to view details:",
+            ["🌟 Star Performers", "💰 Cash Cows", "🚀 Rising Stars", "⚠️ Slow Movers", "🔴 Dead Stock"]
+        )
+
+        if category_select == "🌟 Star Performers":
+            st.markdown("### 🌟 Star Performers")
+            st.caption("💡 Books with high sales volume (≥10 sold) and significant profit (>€50)")
+
+            if not star_performers:
+                st.info("No star performers yet. Keep selling!")
+            else:
+                for book in sorted(star_performers, key=lambda x: x['total_profit'], reverse=True):
+                    with st.container():
+                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                        with col1:
+                            st.markdown(f"**📖 {book['title']}**")
+                            st.caption(f"🆔 {book['id']} • ✍️ {book.get('author', 'Unknown')}")
+                        with col2:
+                            st.metric("Sold", book['total_sold'])
+                        with col3:
+                            st.metric("Profit", f"€{book['total_profit']:.2f}")
+                        with col4:
+                            st.metric("Margin", f"{book['avg_margin']:.0f}%")
+                        st.markdown("---")
+
+        elif category_select == "💰 Cash Cows":
+            st.markdown("### 💰 Cash Cows")
+            st.caption("💡 Books with excellent profit margins (>40%) - high-value items")
+
+            if not cash_cows:
+                st.info("No cash cows yet")
+            else:
+                for book in sorted(cash_cows, key=lambda x: x['avg_margin'], reverse=True):
+                    with st.container():
+                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                        with col1:
+                            st.markdown(f"**📖 {book['title']}**")
+                            st.caption(f"🆔 {book['id']} • Stock: {book['current_stock']}")
+                        with col2:
+                            st.metric("Margin", f"{book['avg_margin']:.1f}%")
+                        with col3:
+                            st.metric("Profit", f"€{book['total_profit']:.2f}")
+                        with col4:
+                            st.metric("Sold", book['total_sold'])
+                        st.markdown("---")
+
+        elif category_select == "🚀 Rising Stars":
+            st.markdown("### 🚀 Rising Stars")
+            st.caption("💡 Books with high velocity (>0.5 books/day) - trending items")
+
+            if not rising_stars:
+                st.info("No rising stars yet")
+            else:
+                for book in sorted(rising_stars, key=lambda x: x['velocity'], reverse=True):
+                    with st.container():
+                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                        with col1:
+                            st.markdown(f"**📖 {book['title']}**")
+                            st.caption(f"🆔 {book['id']} • Added: {book.get('first_sale', 'Recently')}")
+                        with col2:
+                            st.metric("Velocity", f"{book['velocity']:.2f}/day")
+                        with col3:
+                            st.metric("Sold", book['total_sold'])
+                        with col4:
+                            st.metric("Stock", book['current_stock'])
+
+                        if book['current_stock'] <= 2:
+                            st.warning("⚠️ **Urgent:** Low stock! Consider restocking soon")
+                        st.markdown("---")
+
+        elif category_select == "⚠️ Slow Movers":
+            st.markdown("### ⚠️ Slow Movers")
+            st.caption("💡 Books with low sales velocity (<0.2 books/day) - need attention")
+
+            if not slow_movers:
+                st.success("✅ No slow movers - all books selling well!")
+            else:
+                st.warning(f"📉 {len(slow_movers)} book(s) need attention")
+
+                for book in sorted(slow_movers, key=lambda x: x['velocity']):
+                    with st.container():
+                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                        with col1:
+                            st.markdown(f"**📖 {book['title']}**")
+                            st.caption(f"🆔 {book['id']} • Stock: {book['current_stock']}")
+                        with col2:
+                            st.metric("Velocity", f"{book['velocity']:.3f}/day")
+                        with col3:
+                            st.metric("Total Sold", book['total_sold'])
+                        with col4:
+                            days_since = book.get('days_since_last_sale', 999)
+                            st.metric("Days Idle", days_since if days_since < 999 else "N/A")
+
+                        # Recommendations
+                        st.caption("💡 **Recommendations:**")
+                        recommendations = []
+                        if book['avg_margin'] < 30:
+                            recommendations.append("• Consider lowering price (low margin)")
+                        if book['current_stock'] > 5:
+                            recommendations.append("• High stock + slow sales = Run promotion")
+                        if days_since > 60:
+                            recommendations.append("• No sales in 2+ months - Bundle with popular book")
+
+                        if recommendations:
+                            for rec in recommendations:
+                                st.caption(rec)
+                        st.markdown("---")
+
+        elif category_select == "🔴 Dead Stock":
+            st.markdown("### 🔴 Dead Stock")
+            st.caption("💡 Books that have NEVER sold - critical action needed")
+
+            if not dead_stock:
+                st.success("✅ Excellent! No dead stock - all books have sold at least once")
+            else:
+                st.error(f"🚨 {len(dead_stock)} book(s) have never sold")
+
+                # Calculate capital tied up
+                dead_capital = sum(b['current_stock'] * b.get('buy_price', 0) for b in dead_stock)
+                st.warning(f"💰 **€{dead_capital:.2f}** capital tied up in unsold inventory")
+
+                for book in sorted(dead_stock, key=lambda x: x['current_stock'] * x.get('buy_price', 0), reverse=True):
+                    with st.container():
+                        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                        with col1:
+                            st.markdown(f"**📖 {book['title']}**")
+                            st.caption(f"🆔 {book['id']} • ✍️ {book.get('author', 'Unknown')}")
+                        with col2:
+                            st.metric("Stock", book['current_stock'])
+                        with col3:
+                            invested = book['current_stock'] * book.get('buy_price', 0)
+                            st.metric("Invested", f"€{invested:.2f}")
+                        with col4:
+                            target = book.get('target_price', 0)
+                            st.metric("Target", f"€{target:.2f}")
+
+                        # Urgent actions
+                        st.error("**⚠️ Urgent Actions Needed:**")
+                        st.caption("1️⃣ Check pricing - is it too high?")
+                        st.caption("2️⃣ Improve listing - better photo/description?")
+                        st.caption("3️⃣ Bundle with popular books")
+                        st.caption("4️⃣ Run flash sale (20-30% off)")
+                        st.caption("5️⃣ Last resort: Donate or discount heavily")
+                        st.markdown("---")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # 🎯 ACTIONABLE RECOMMENDATIONS
+    # ============================================================================
+    st.markdown("### 🎯 Smart Recommendations")
+
+    rec_col1, rec_col2, rec_col3 = st.columns(3)
+
+    with rec_col1:
+        st.markdown("**🔄 Restock Urgently**")
+        restock_urgent = [
+            b for b in rising_stars + star_performers
+            if b['current_stock'] <= 2
+        ]
+
+        if restock_urgent:
+            for book in restock_urgent[:5]:
+                st.success(f"📕 {book['id']} - {book['title'][:25]}")
+                st.caption(f"   Stock: {book['current_stock']} • Velocity: {book['velocity']:.2f}/day")
+        else:
+            st.info("✅ All hot sellers have good stock")
+
+    with rec_col2:
+        st.markdown("**📈 Consider Price Increase**")
+        price_increase = [
+            b for b in books_with_sales
+            if b['velocity'] > 0.5 and b['avg_margin'] < 40
+        ]
+
+        if price_increase:
+            for book in sorted(price_increase, key=lambda x: x['velocity'], reverse=True)[:5]:
+                st.info(f"📗 {book['id']} - {book['title'][:25]}")
+                st.caption(f"   Velocity: {book['velocity']:.2f}/day • Margin: {book['avg_margin']:.0f}%")
+        else:
+            st.info("✅ Pricing looks optimal")
+
+    with rec_col3:
+        st.markdown("**💥 Run Promotion**")
+        needs_promotion = slow_movers + dead_stock
+
+        if needs_promotion:
+            for book in needs_promotion[:5]:
+                st.warning(f"📙 {book['id']} - {book['title'][:25]}")
+                idle_days = book.get('days_since_last_sale', 0)
+                st.caption(f"   Idle: {idle_days if idle_days < 999 else 'Never sold'} days")
+        else:
+            st.success("✅ All books moving well!")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # 📋 DETAILED DATA TABLE (COLLAPSIBLE)
+    # ============================================================================
+    with st.expander("📋 **View Full Performance Table**", expanded=False):
+        st.caption("💡 Complete data for all books")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            table_filter = st.selectbox(
+                "Filter:",
+                ["All Books", "Active Only", "Sold Out", "With Sales", "Never Sold"],
+                key="table_filter"
+            )
+        with col2:
+            table_sort = st.selectbox(
+                "Sort By:",
+                ["Total Sold", "Revenue", "Profit", "Margin %", "Velocity", "Stock"],
+                key="table_sort"
+            )
+
+        # Apply filter
+        filtered_data = performance
+        if table_filter == "Active Only":
+            filtered_data = [b for b in performance if b['status'] == 'Active']
+        elif table_filter == "Sold Out":
+            filtered_data = [b for b in performance if b['status'] == 'Sold Out']
+        elif table_filter == "With Sales":
+            filtered_data = [b for b in performance if b['total_sold'] > 0]
+        elif table_filter == "Never Sold":
+            filtered_data = [b for b in performance if b['total_sold'] == 0]
+
+        # Apply sort
+        sort_keys_table = {
+            "Total Sold": lambda x: x['total_sold'],
+            "Revenue": lambda x: x['total_revenue'],
+            "Profit": lambda x: x['total_profit'],
+            "Margin %": lambda x: x['avg_margin'],
+            "Velocity": lambda x: x['velocity'],
+            "Stock": lambda x: x['current_stock']
+        }
+        filtered_data = sorted(filtered_data, key=sort_keys_table[table_sort], reverse=True)
+
+        if filtered_data:
+            df = pd.DataFrame(filtered_data)
+            st.dataframe(
+                df[[
+                    'id', 'title', 'author', 'status', 'current_stock',
+                    'total_sold', 'total_revenue', 'total_profit', 'avg_margin',
+                    'num_sales', 'velocity'
+                ]],
+                column_config={
+                    'id': st.column_config.TextColumn('ID', width='small'),
+                    'title': st.column_config.TextColumn('Title', width='large'),
+                    'author': st.column_config.TextColumn('Author', width='medium'),
+                    'status': st.column_config.TextColumn('Status', width='small'),
+                    'current_stock': st.column_config.NumberColumn('Stock', width='small'),
+                    'total_sold': st.column_config.NumberColumn('Sold', width='small'),
+                    'total_revenue': st.column_config.NumberColumn('Revenue', format='€%.2f', width='small'),
+                    'total_profit': st.column_config.NumberColumn('Profit', format='€%.2f', width='small'),
+                    'avg_margin': st.column_config.NumberColumn('Margin %', format='%.1f%%', width='small'),
+                    'num_sales': st.column_config.NumberColumn('# Sales', width='small'),
+                    'velocity': st.column_config.NumberColumn('Velocity', format='%.2f', width='small')
+                },
+                hide_index=True,
+                width='stretch'
+            )
+        else:
+            st.info("No books match the selected filter")

@@ -75,7 +75,7 @@ def _render_sale_form(available_books: list[dict]):
 
     if 'sale_form_key' not in st.session_state:
         st.session_state.sale_form_key = 0
-    
+
     if 'refresh_key' not in st.session_state:
         st.session_state.refresh_key = 0
 
@@ -475,10 +475,10 @@ def _render_bundle_sale_tab(available_books: list[dict]):
     # ✅ Initialize ALL form keys at the start
     if 'sale_form_key' not in st.session_state:
         st.session_state.sale_form_key = 0
-    
+
     if 'bundle_form_key' not in st.session_state:  # ✅ ADD THIS
         st.session_state.bundle_form_key = 0
-    
+
     if 'refresh_key' not in st.session_state:
         st.session_state.refresh_key = 0
 

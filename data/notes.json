@@ -5,12 +5,5 @@
     "content": "Bn8",
     "date": "2026-01-16 22:48:16",
     "files": []
-  },
-  {
-    "id": 3,
-    "title": "Next update",
-    "content": "- Make book performance tab better\n- Add list to show current stock for books\n- Make title smaller and add a list showing available stock with number, when selected it shows books info\n- Order dataframe by stock\n",
-    "date": "2026-01-17 23:01:33",
-    "files": []
   }
 ]
