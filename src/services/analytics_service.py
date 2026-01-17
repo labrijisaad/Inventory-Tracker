@@ -577,7 +577,7 @@ def _render_best_performers(all_sales, all_books):
 # INVENTORY HEALTH TAB
 # ============================================================================
 def _render_inventory_health(stats, all_books):
-    """Render inventory health metrics and alerts with book IDs."""
+    """Render inventory health metrics with smart prioritization."""
     render_section_header("Inventory Status", "📦")
 
     col1, col2, col3, col4 = st.columns(4)
@@ -594,79 +594,252 @@ def _render_inventory_health(stats, all_books):
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Low stock alerts WITH BOOK ID
-    low_stock = get_low_stock_books()
+    # ✅ SMART STOCK ANALYSIS WITH PRIORITIZATION
+    from src.data.database import get_sales
 
+    # Get all sales for velocity calculation
+    all_sales = get_sales()
+    
+    # Calculate book performance
+    book_stats = {}
+    for sale in all_sales:
+        book_id = sale['book_id']
+        if book_id not in book_stats:
+            book_stats[book_id] = {
+                'total_sold': 0,
+                'last_sale_date': None,
+                'num_sales': 0
+            }
+        
+        book_stats[book_id]['total_sold'] += sale['qty']
+        book_stats[book_id]['num_sales'] += 1
+        
+        # Track most recent sale
+        try:
+            sale_date_str = sale['date']
+            if '/' in sale_date_str:
+                sale_date = datetime.strptime(sale_date_str, "%d/%m/%Y")
+            elif ' ' in sale_date_str:
+                sale_date = datetime.strptime(sale_date_str.split()[0], "%Y-%m-%d")
+            else:
+                sale_date = datetime.strptime(sale_date_str, "%Y-%m-%d")
+            
+            if book_stats[book_id]['last_sale_date'] is None or sale_date > book_stats[book_id]['last_sale_date']:
+                book_stats[book_id]['last_sale_date'] = sale_date
+        except:
+            pass
+
+    # Categorize books by stock level and sales performance
+    critical_stock = []   # Stock = 0 (sold out)
+    urgent_restock = []   # Stock = 1 AND selling well
+    low_stock = []        # Stock = 1 but not selling fast
+    monitor_stock = []    # Stock = 2
+
+    for book in all_books:
+        book_id = book['id']
+        stock = book['stock']
+        stats_data = book_stats.get(book_id, {'total_sold': 0, 'num_sales': 0, 'last_sale_date': None})
+        
+        # Calculate days since last sale
+        days_since_sale = None
+        if stats_data['last_sale_date']:
+            days_since_sale = (datetime.now() - stats_data['last_sale_date']).days
+        
+        book_info = {
+            'id': book_id,
+            'title': book['title'],
+            'author': book['author'],
+            'stock': stock,
+            'buy_price': book['buy_price'],
+            'total_sold': stats_data['total_sold'],
+            'num_sales': stats_data['num_sales'],
+            'days_since_sale': days_since_sale,
+            'is_selling': stats_data['total_sold'] > 0
+        }
+        
+        if stock == 0:
+            critical_stock.append(book_info)
+        elif stock == 1:
+            # Urgent if sold recently (within 30 days) OR sold more than 2 copies
+            if (days_since_sale is not None and days_since_sale <= 30) or stats_data['total_sold'] >= 2:
+                urgent_restock.append(book_info)
+            else:
+                low_stock.append(book_info)
+        elif stock == 2:
+            monitor_stock.append(book_info)
+
+    # ✅ RENDER CATEGORIZED SECTIONS
+    
+    # 1. CRITICAL - Sold Out
+    if critical_stock:
+        st.error(f"🚨 **Critical: {len(critical_stock)} book(s) sold out**")
+        
+        with st.expander(f"📋 View {len(critical_stock)} Sold Out Book(s)", expanded=False):
+            for book in critical_stock[:10]:  # Show top 10
+                # Build the info line
+                info_parts = [
+                    f"Sold: {book['total_sold']} copies",
+                    f"💰 Cost: €{book['buy_price']:.2f}"
+                ]
+                
+                if book['days_since_sale'] is not None:
+                    info_parts.append(f"🕒 Last sale: {book['days_since_sale']} days ago")
+                
+                info_line = " • ".join(info_parts)
+                
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; 
+                                border-left: 3px solid #ef4444; margin-bottom: 8px;">
+                        <strong style="color: #fca5a5;">📕 {book['id']}</strong> - {book['title'][:40]}<br>
+                        <span style="color: #9ca3af; font-size: 12px;">{info_line}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    
+    # 2. URGENT - Low Stock + Selling Well
+    if urgent_restock:
+        st.warning(f"⚠️ **Urgent Restock: {len(urgent_restock)} book(s) need immediate attention**")
+        st.caption("These books have only 1 copy left and are selling well")
+        
+        with st.expander(f"🔥 View {len(urgent_restock)} Hot-Selling Book(s)", expanded=True):
+            for book in urgent_restock:
+                # Determine urgency badge
+                if book['days_since_sale'] and book['days_since_sale'] <= 7:
+                    urgency = "🔥 Sold recently"
+                    color = "#f59e0b"
+                elif book['total_sold'] >= 5:
+                    urgency = "⭐ Best seller"
+                    color = "#10b981"
+                else:
+                    urgency = "📈 Active"
+                    color = "#3b82f6"
+                
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px; 
+                                border-left: 3px solid {color}; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: #fcd34d;">📙 {book['id']}</strong> - {book['title'][:35]}<br>
+                                <span style="color: #9ca3af; font-size: 12px;">
+                                    ✅ Sold: {book['total_sold']} • 
+                                    📦 Stock: {book['stock']} left • 
+                                    💰 €{book['buy_price']:.2f}
+                                </span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="background: {color}; color: white; padding: 4px 8px; 
+                                             border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                    {urgency}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    
+    # 3. LOW STOCK - But Not Urgent
     if low_stock:
-        st.warning(f"⚠️ **{len(low_stock)} book(s)** need restocking")
+        st.info(f"💡 **Monitor: {len(low_stock)} book(s) with low stock**")
+        st.caption("These books have 1 copy left but aren't selling fast")
+        
+        with st.expander(f"📊 View {len(low_stock)} Book(s) to Monitor", expanded=False):
+            for book in low_stock[:10]:  # Show top 10
+                # Build status line
+                if book['total_sold'] == 0:
+                    status_line = f"Never sold • 💰 €{book['buy_price']:.2f}"
+                else:
+                    status_parts = [f"Sold {book['total_sold']} times", f"💰 €{book['buy_price']:.2f}"]
+                    if book['days_since_sale'] is not None:
+                        status_parts.append(f"Last sale: {book['days_since_sale']} days ago")
+                    status_line = " • ".join(status_parts)
+                
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(59, 130, 246, 0.05); padding: 10px; border-radius: 6px; 
+                                border-left: 2px solid #3b82f6; margin-bottom: 6px;">
+                        <strong style="color: #93c5fd;">📘 {book['id']}</strong> - {book['title'][:40]}<br>
+                        <span style="color: #9ca3af; font-size: 11px;">{status_line}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    
+    # 4. WARNING STOCK (2 copies)
+    if monitor_stock:
+        with st.expander(f"⚡ {len(monitor_stock)} book(s) with 2 copies (approaching low stock)", expanded=False):
+            for book in monitor_stock[:10]:
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(156, 163, 175, 0.05); padding: 8px; border-radius: 4px; 
+                                margin-bottom: 4px;">
+                        <span style="color: #d1d5db;">📗 {book['id']}</span> - 
+                        <span style="color: #9ca3af; font-size: 12px;">{book['title'][:40]}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    
+    # ✅ ALL CLEAR MESSAGE
+    if not critical_stock and not urgent_restock and not low_stock:
+        st.success("✅ **All stock levels healthy!**")
+        st.caption("📦 No urgent restocking needed • Keep monitoring sales trends")
 
-        for book in low_stock:
-            with st.expander(f"{'🔴' if book['stock'] == 1 else '🟡'} {book['id']} - {book['title']}", expanded=False):
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.caption("📖 Book ID")
-                    st.write(f"**{book['id']}**")
-                with col2:
-                    st.caption("✍️ Author")
-                    st.write(book['author'])
-                with col3:
-                    st.caption("📦 Stock")
-                    st.write(f"**{book['stock']}** remaining")
-                with col4:
-                    st.caption("💰 Value")
-                    st.write(f"€{book['buy_price']:.2f}")
-    else:
-        st.success("✅ All stock levels healthy!")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # Below cost books WITH BOOK ID
+    # ✅ BELOW COST BOOKS (PRICING ISSUES)
     if stats['low_margin_books']:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.error(f"💔 **{len(stats['low_margin_books'])} book(s)** priced below cost")
+        st.markdown("---")
+        st.error(f"💔 **Pricing Alert: {len(stats['low_margin_books'])} book(s) priced below cost**")
 
         # Get book map to find IDs
         book_map = {b['title']: b['id'] for b in all_books}
 
-        for b in stats['low_margin_books']:
-            loss = b['buy'] - b['target']
-            book_id = book_map.get(b['title'], 'N/A')
+        with st.expander(f"⚠️ View {len(stats['low_margin_books'])} Mispriced Book(s)", expanded=False):
+            for b in stats['low_margin_books']:
+                loss = b['buy'] - b['target']
+                book_id = book_map.get(b['title'], 'N/A')
 
-            with st.expander(f"⚠️ {book_id} - {b['title']}", expanded=False):
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.caption("📖 Book ID")
-                    st.write(f"**{book_id}**")
-                with col2:
-                    st.caption("💵 Buy Price")
-                    st.write(f"€{b['buy']:.2f}")
-                with col3:
-                    st.caption("🎯 Target Price")
-                    st.write(f"€{b['target']:.2f}")
-                with col4:
-                    st.caption("💸 Loss")
-                    st.write(f"€{loss:.2f}")
+                st.markdown(
+                    f"""
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; 
+                                border-left: 3px solid #ef4444; margin-bottom: 8px;">
+                        <strong style="color: #fca5a5;">📕 {book_id}</strong> - {b['title'][:40]}<br>
+                        <span style="color: #9ca3af; font-size: 12px;">
+                            💵 Cost: €{b['buy']:.2f} • 
+                            🎯 Target: €{b['target']:.2f} • 
+                            💸 Loss per sale: €{loss:.2f}
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
 
 # ============================================================================
 # ✅ PROFIT ANALYSIS WITH PROPER CARD RENDERING
 # ============================================================================
 def _render_profit_analysis(grouped_sales, all_books):
-    """Render detailed profit analysis with 5% granularity."""
+    """Render detailed profit analysis with clearer labels."""
     render_section_header("Profit Breakdown", "💰")
 
     if not grouped_sales:
         st.info("📭 No sales data")
         return
 
-    # ✅ CREATE 5% MARGIN BUCKETS
+    # ✅ CREATE 5% MARGIN BUCKETS WITH CLEANER LABELS
     margin_buckets = {}
 
     # Negative margins (losses)
     for i in range(-100, 0, 5):
-        margin_buckets[f"{i}% to {i+5}%"] = 0
+        margin_buckets[f"{i} to {i+5}%"] = 0
 
     # Positive margins
     for i in range(0, 100, 5):
-        margin_buckets[f"{i}% to {i+5}%"] = 0
+        margin_buckets[f"{i} to {i+5}%"] = 0
 
     # 100%+ (extreme profits)
     margin_buckets["100%+"] = 0
@@ -684,46 +857,89 @@ def _render_profit_analysis(grouped_sales, all_books):
                 margin_buckets["100%+"] += 1
             else:
                 bucket_index = int(margin // 5) * 5
-                bucket_key = f"{bucket_index}% to {bucket_index+5}%"
+                bucket_key = f"{bucket_index} to {bucket_index+5}%"
                 if bucket_key in margin_buckets:
                     margin_buckets[bucket_key] += 1
 
-    # Filter out empty buckets and sort
+    # Filter out empty buckets and sort by range (lowest to highest)
     active_buckets = {k: v for k, v in margin_buckets.items() if v > 0}
-    sorted_buckets = dict(sorted(active_buckets.items(), key=lambda x: x[1], reverse=True))
+    
+    # ✅ Sort by margin range (numerical order)
+    def sort_key(item):
+        key = item[0]
+        if key == "100%+":
+            return 1000  # Put 100%+ at the end
+        else:
+            # Extract first number: "5 to 10%" → 5
+            return int(key.split()[0])
+    
+    sorted_buckets = dict(sorted(active_buckets.items(), key=sort_key))
 
-    # ✅ NATIVE BAR CHART
-    st.markdown("**📊 Sales Distribution by Profit Margin (5% Increments)**")
+    # ✅ NATIVE BAR CHART WITH BETTER TITLE
+    st.markdown("**📊 Sales Distribution by Profit Margin**")
+    st.caption("See how many sales fall into each profit margin range")
 
     df_margins = pd.DataFrame({
         'Margin Range': list(sorted_buckets.keys()),
-        'Sales Count': list(sorted_buckets.values())
+        'Number of Sales': list(sorted_buckets.values())
     }).set_index('Margin Range')
 
     st.bar_chart(df_margins, color="#667eea", height=350, horizontal=True)
 
-    # ✅ MOST PROFITABLE SALES - USING COLUMNS (NO HTML)
+    # ✅ MOST PROFITABLE SALES - WITH ALL KEY METRICS
     st.markdown("<br><br>", unsafe_allow_html=True)
     render_section_header("Most Profitable Sales", "💎")
+
+    # ✅ EXPLANATION BANNER
+    st.markdown(
+        """
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                    padding: 16px 20px; border-radius: 12px; border-left: 4px solid #667eea; margin-bottom: 20px;">
+            <p style="margin: 0; color: #e5e7eb; font-size: 13px; line-height: 1.6;">
+                <strong style="color: #b8b8ff;">📊 Understanding Your Margins</strong><br>
+                <span style="color: #9ca3af;">
+                <strong>Paid Price:</strong> What customer paid (total) • 
+                <strong>Profit:</strong> What you earned (after costs) • 
+                <strong>Margin:</strong> Profit as % of revenue
+                </span>
+            </p>
+            <p style="margin: 12px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.5;">
+                <strong style="color: #43e97b;">Example:</strong> 
+                Customer pays <strong>€50</strong> → After €1 packaging = €49 revenue → 
+                Your cost €24 → <strong>Profit €25</strong> → 
+                <strong style="color: #667eea;">Margin = (25 / 49) × 100 = 51%</strong>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     top_profitable = sorted(grouped_sales, key=lambda x: x['profit'], reverse=True)[:10]
 
     for i, s in enumerate(top_profitable, 1):
         margin = (s['profit'] / s['total'] * 100) if s['total'] > 0 else 0
 
-        # Determine color and icon
+        # Determine color and icon based on margin
         if margin < 0:
             icon = "💔"
             color = "#ff6b6b"
+            margin_label = "Loss"
         elif margin < 20:
             icon = "⚠️"
             color = "#feca57"
+            margin_label = "Low"
         elif margin < 40:
             icon = "💙"
             color = "#4facfe"
-        else:
+            margin_label = "Good"
+        elif margin < 60:
             icon = "💚"
             color = "#43e97b"
+            margin_label = "Great"
+        else:
+            icon = "🌟"
+            color = "#a78bfa"
+            margin_label = "Excellent"
 
         # Sale title
         if s['type'] == 'bundle':
@@ -742,28 +958,34 @@ def _render_profit_analysis(grouped_sales, all_books):
         except:
             display_date = s.get('date', 'N/A')
 
-        # ✅ RENDER WITH COLUMNS (NO HTML ISSUES)
+        # ✅ NEW LAYOUT: Paid Price + Profit + Margin
         with st.container():
-            col1, col2, col3 = st.columns([5, 2, 2])
+            # Header row
+            st.markdown(f"**{icon} #{i} {title}**")
+            st.caption(f"`{display_date}` • {s.get('platform', 'Unknown')}")
+            
+            # Metrics row (3 columns)
+            col1, col2, col3 = st.columns(3)
 
             with col1:
-                st.markdown(f"**{icon} #{i} {title}**")
-                st.caption(f"`{display_date}` • {s.get('platform', 'Unknown')}")
+                st.markdown("**💰 Paid Price**")
+                st.markdown(f"### €{s['total']:.2f}")
 
             with col2:
-                st.metric("Profit", f"€{s['profit']:.2f}", label_visibility="collapsed")
+                st.markdown("**📈 Profit**")
+                st.markdown(f"### €{s['profit']:.2f}")
 
             with col3:
-                st.metric("Margin", f"{margin:+.1f}%", label_visibility="collapsed")
+                st.markdown(f"**📊 Margin** · {margin_label}")
+                st.markdown(f"### {margin:.1f}%")
 
             # Add colored bar indicator
             st.markdown(
-                f'<div style="height: 4px; background: {color}; border-radius: 2px; margin-top: -10px;"></div>',
+                f'<div style="height: 4px; background: {color}; border-radius: 2px; margin-top: -10px; margin-bottom: 8px;"></div>',
                 unsafe_allow_html=True
             )
 
             st.divider()
-
 
 # ============================================================================
 # HOME PAGE OVERVIEW

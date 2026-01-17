@@ -123,7 +123,7 @@ def render_custom_navigation():
         {"name": "Sales", "icon": "💰", "page": "pages/02_sales.py"},
         {"name": "Analytics", "icon": "📊", "page": "pages/03_analytics.py"},
         {"name": "Messages", "icon": "💬", "page": "pages/04_messages.py"},
-        {"name": "Notes", "icon": "📝", "page": "pages/06_notes.py"},  # ✅ NEW!
+        {"name": "Notes", "icon": "📝", "page": "pages/06_notes.py"},
     ]
 
     current_page = st.session_state.get('current_page', 'Home')

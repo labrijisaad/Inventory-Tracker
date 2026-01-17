@@ -27,6 +27,12 @@ from src.utils.helpers import (
 )
 
 
+if 'sale_form_key' not in st.session_state:
+    st.session_state.sale_form_key = 0
+
+if 'bundle_form_key' not in st.session_state:
+    st.session_state.bundle_form_key = 0
+
 def render_sales_page():
     """Main sales page."""
     render_page_header(
@@ -67,6 +73,9 @@ def _render_sale_form(available_books: list[dict]):
     """Render sale input form."""
     render_section_header("Sale Details", "📝")
 
+    # ✅ Get current form key (changes after successful submission)
+    form_key = st.session_state.sale_form_key
+
     # ✅ IMPROVED: Add stock status to dropdown
     book_options = {}
     for b in available_books:
@@ -77,7 +86,7 @@ def _render_sale_form(available_books: list[dict]):
     selected_display = st.selectbox(
         "📖 Select Book",
         list(book_options.keys()),
-        key="book_selector"
+        key=f"book_selector_{form_key}"  # ✅ Dynamic key
     )
     selected_book = book_options[selected_display]
 
@@ -104,21 +113,21 @@ def _render_sale_form(available_books: list[dict]):
     st.divider()
 
     # Date
-    sale_date = st.date_input("📅 Date", value=datetime.now(), key="sale_date")
+    sale_date = st.date_input("📅 Date", value=datetime.now(), key=f"sale_date_{form_key}")
     sale_datetime_str = sale_date.strftime('%Y-%m-%d')
     st.caption(f"📅 `{sale_date.strftime('%d/%m/%Y')}`")
 
     st.divider()
 
     # Sale details
-    platform = st.selectbox("🛒 Platform", PLATFORMS, key="platform")
+    platform = st.selectbox("🛒 Platform", PLATFORMS, key=f"platform_{form_key}")
 
     qty = st.number_input(
         "📦 Quantity",
         min_value=1,
         max_value=selected_book["stock"],
         value=1,
-        key="qty"
+        key=f"qty_{form_key}"
     )
 
     suggested_total = qty * (selected_book["target_price"] if selected_book["target_price"] > 0 else selected_book["buy_price"] * 1.5)
@@ -127,7 +136,7 @@ def _render_sale_form(available_books: list[dict]):
         min_value=0.0,
         value=float(suggested_total),
         step=0.25,
-        key="total_paid"
+        key=f"total_paid_{form_key}"
     )
 
     total_packaging = st.number_input(
@@ -135,13 +144,13 @@ def _render_sale_form(available_books: list[dict]):
         min_value=0.0,
         value=DEFAULT_PACKAGING_COST * qty,
         step=0.10,
-        key="packaging_total"
+        key=f"packaging_total_{form_key}"
     )
 
     packaging_per_book = total_packaging / qty if qty > 0 else 0
 
-    customer_name = st.text_input("👤 Customer Name", placeholder="e.g., Ahmed M.", key="customer_name")
-    customer_username = st.text_input("@️ Username", placeholder="e.g., ahmed_m", key="customer_username")
+    customer_name = st.text_input("👤 Customer Name", placeholder="e.g., Saad L.", key=f"customer_name_{form_key}")
+    customer_username = st.text_input("@️ Username", placeholder="e.g., zera", key=f"customer_username_{form_key}")
 
     # Calculate profit
     calc = calculate_sale_profit(qty, total_paid, packaging_per_book, selected_book["buy_price"])
@@ -208,7 +217,7 @@ def _render_sale_form(available_books: list[dict]):
     # Submit button
     submit_disabled = len(validation_issues) > 0
     if st.button("✅ Record Sale", type="primary", width='stretch',
-                 key="submit_sale", disabled=submit_disabled):
+                 key=f"submit_sale_{form_key}", disabled=submit_disabled):
         with st.spinner("Recording sale..."):
             success, msg = add_sale(
                 selected_book["id"], qty, total_paid,
@@ -231,7 +240,10 @@ def _render_sale_form(available_books: list[dict]):
                     st.warning(f"⚠️ Only {new_stock} copy/copies of '{selected_book['title']}' remaining!")
 
                 st.balloons()
+                
+                st.session_state.sale_form_key += 1
                 st.session_state.refresh_key += 1
+                
                 time.sleep(1.5)
                 st.rerun()
             else:
@@ -456,6 +468,9 @@ def _render_bundle_sale_tab(available_books: list[dict]):
     render_section_header("Create Bundle Sale", "🎁")
     st.caption("Sell multiple books in one transaction")
 
+    # ✅ Get current bundle form key
+    bundle_key = st.session_state.bundle_form_key
+
     # ✅ IMPROVED: Cleaner bundle book display
     book_display_options = []
     for b in available_books:
@@ -466,7 +481,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
     selected_books = st.multiselect(
         "Select Books for Bundle (minimum 2)",
         options=[disp for disp, _ in book_display_options],
-        key="bundle_books",
+        key=f"bundle_books_{bundle_key}",  # ✅ Dynamic key
         help="💡 Tip: Bundles often sell better than individual books"
     )
 
@@ -493,7 +508,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
             min_value=1,
             max_value=book['stock'],
             value=1,
-            key=f"bundle_qty_{book['id']}"
+            key=f"bundle_qty_{book['id']}_{bundle_key}"  # ✅ Dynamic key
         )
         quantities.append(qty)
 
@@ -512,7 +527,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
         min_value=0.0,
         value=float(suggested_bundle_total),
         step=0.50,
-        key="bundle_total"
+        key=f"bundle_total_{bundle_key}"  # ✅ Dynamic key
     )
 
     bundle_packaging_total = st.number_input(
@@ -520,7 +535,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
         min_value=0.0,
         value=DEFAULT_PACKAGING_COST * total_books,
         step=0.10,
-        key="bundle_packaging_total"
+        key=f"bundle_packaging_total_{bundle_key}"  # ✅ Dynamic key
     )
 
     bundle_packaging = bundle_packaging_total / total_books if total_books > 0 else 0
@@ -529,11 +544,11 @@ def _render_bundle_sale_tab(available_books: list[dict]):
 
     # Customer
     render_section_header("Customer", "👤")
-    bundle_customer = st.text_input("Customer Name", key="bundle_customer")
-    bundle_username = st.text_input("@️ Username", key="bundle_username")
-    bundle_platform = st.selectbox("Platform", PLATFORMS, key="bundle_platform")
+    bundle_customer = st.text_input("Customer Name", key=f"bundle_customer_{bundle_key}")
+    bundle_username = st.text_input("@️ Username", key=f"bundle_username_{bundle_key}")
+    bundle_platform = st.selectbox("Platform", PLATFORMS, key=f"bundle_platform_{bundle_key}")
 
-    bundle_date = st.date_input("Date", value=datetime.now(), key="bundle_date")
+    bundle_date = st.date_input("Date", value=datetime.now(), key=f"bundle_date_{bundle_key}")
     bundle_datetime_str = bundle_date.strftime('%Y-%m-%d')
 
     st.divider()
@@ -601,7 +616,7 @@ def _render_bundle_sale_tab(available_books: list[dict]):
     st.divider()
 
     # Submit
-    if st.button("✅ Record Bundle Sale", type="primary", width='stretch', key="submit_bundle"):
+    if st.button("✅ Record Bundle Sale", type="primary", width='stretch', key=f"submit_bundle_{bundle_key}"):
         if not bundle_customer.strip() or not bundle_username.strip():
             show_error_toast("Customer info required")
             st.error("❌ Please enter customer name and username")
@@ -617,7 +632,10 @@ def _render_bundle_sale_tab(available_books: list[dict]):
                     show_success_toast(f"Bundle recorded! Profit: €{bundle_calc['profit']:.2f}")
                     st.success(f"✅ {msg}")
                     st.balloons()
+                    
+                    st.session_state.bundle_form_key += 1
                     st.session_state.refresh_key += 1
+                    
                     time.sleep(1.5)
                     st.rerun()
                 else:
