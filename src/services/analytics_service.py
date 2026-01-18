@@ -159,7 +159,7 @@ def _render_hero_metrics(metrics):
 
         st.markdown(
             f"""
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         padding: 20px; border-radius: 12px; text-align: center; color: white;
                         box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);">
                 <h3 style="margin: 0; font-size: 28px;">💰</h3>
@@ -176,7 +176,7 @@ def _render_hero_metrics(metrics):
     with col2:
         st.markdown(
             f"""
-            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); 
+            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
                         padding: 20px; border-radius: 12px; text-align: center; color: white;
                         box-shadow: 0 8px 20px rgba(67, 233, 123, 0.4);">
                 <h3 style="margin: 0; font-size: 28px;">📈</h3>
@@ -193,7 +193,7 @@ def _render_hero_metrics(metrics):
     with col3:
         st.markdown(
             f"""
-            <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); 
+            <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
                         padding: 20px; border-radius: 12px; text-align: center; color: white;
                         box-shadow: 0 8px 20px rgba(250, 112, 154, 0.4);">
                 <h3 style="margin: 0; font-size: 28px;">📚</h3>
@@ -210,7 +210,7 @@ def _render_hero_metrics(metrics):
     with col4:
         st.markdown(
             f"""
-            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); 
+            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
                         padding: 20px; border-radius: 12px; text-align: center; color: white;
                         box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);">
                 <h3 style="margin: 0; font-size: 28px;">🛒</h3>
@@ -227,7 +227,7 @@ def _render_hero_metrics(metrics):
     with col5:
         st.markdown(
             f"""
-            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
                         padding: 20px; border-radius: 12px; text-align: center; color: white;
                         box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);">
                 <h3 style="margin: 0; font-size: 28px;">💳</h3>
@@ -689,7 +689,7 @@ def _render_inventory_health(stats, all_books):
 
                 st.markdown(
                     f"""
-                    <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; 
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px;
                                 border-left: 3px solid #ef4444; margin-bottom: 8px;">
                         <strong style="color: #fca5a5;">📕 {book['id']}</strong> - {book['title'][:40]}<br>
                         <span style="color: #9ca3af; font-size: 12px;">{info_line}</span>
@@ -718,19 +718,19 @@ def _render_inventory_health(stats, all_books):
 
                 st.markdown(
                     f"""
-                    <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px; 
+                    <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px;
                                 border-left: 3px solid {color}; margin-bottom: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <strong style="color: #fcd34d;">📙 {book['id']}</strong> - {book['title'][:35]}<br>
                                 <span style="color: #9ca3af; font-size: 12px;">
-                                    ✅ Sold: {book['total_sold']} • 
-                                    📦 Stock: {book['stock']} left • 
+                                    ✅ Sold: {book['total_sold']} •
+                                    📦 Stock: {book['stock']} left •
                                     💰 €{book['buy_price']:.2f}
                                 </span>
                             </div>
                             <div style="text-align: right;">
-                                <span style="background: {color}; color: white; padding: 4px 8px; 
+                                <span style="background: {color}; color: white; padding: 4px 8px;
                                              border-radius: 4px; font-size: 11px; font-weight: 600;">
                                     {urgency}
                                 </span>
@@ -759,7 +759,7 @@ def _render_inventory_health(stats, all_books):
 
                 st.markdown(
                     f"""
-                    <div style="background: rgba(59, 130, 246, 0.05); padding: 10px; border-radius: 6px; 
+                    <div style="background: rgba(59, 130, 246, 0.05); padding: 10px; border-radius: 6px;
                                 border-left: 2px solid #3b82f6; margin-bottom: 6px;">
                         <strong style="color: #93c5fd;">📘 {book['id']}</strong> - {book['title'][:40]}<br>
                         <span style="color: #9ca3af; font-size: 11px;">{status_line}</span>
@@ -774,9 +774,9 @@ def _render_inventory_health(stats, all_books):
             for book in monitor_stock[:10]:
                 st.markdown(
                     f"""
-                    <div style="background: rgba(156, 163, 175, 0.05); padding: 8px; border-radius: 4px; 
+                    <div style="background: rgba(156, 163, 175, 0.05); padding: 8px; border-radius: 4px;
                                 margin-bottom: 4px;">
-                        <span style="color: #d1d5db;">📗 {book['id']}</span> - 
+                        <span style="color: #d1d5db;">📗 {book['id']}</span> -
                         <span style="color: #9ca3af; font-size: 12px;">{book['title'][:40]}</span>
                     </div>
                     """,
@@ -805,12 +805,12 @@ def _render_inventory_health(stats, all_books):
 
                 st.markdown(
                     f"""
-                    <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; 
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px;
                                 border-left: 3px solid #ef4444; margin-bottom: 8px;">
                         <strong style="color: #fca5a5;">📕 {book_id}</strong> - {b['title'][:40]}<br>
                         <span style="color: #9ca3af; font-size: 12px;">
-                            💵 Cost: €{b['buy']:.2f} • 
-                            🎯 Target: €{b['target']:.2f} • 
+                            💵 Cost: €{b['buy']:.2f} •
+                            🎯 Target: €{b['target']:.2f} •
                             💸 Loss per sale: €{loss:.2f}
                         </span>
                     </div>
@@ -898,15 +898,15 @@ def _render_profit_analysis(grouped_sales, all_books):
             <p style="margin: 0; color: #e5e7eb; font-size: 13px; line-height: 1.6;">
                 <strong style="color: #b8b8ff;">📊 Understanding Your Margins</strong><br>
                 <span style="color: #9ca3af;">
-                <strong>Paid Price:</strong> What customer paid (total) • 
-                <strong>Profit:</strong> What you earned (after costs) • 
+                <strong>Paid Price:</strong> What customer paid (total) •
+                <strong>Profit:</strong> What you earned (after costs) •
                 <strong>Margin:</strong> Profit as % of revenue
                 </span>
             </p>
             <p style="margin: 12px 0 0 0; color: #9ca3af; font-size: 12px; line-height: 1.5;">
-                <strong style="color: #43e97b;">Example:</strong> 
-                Customer pays <strong>€50</strong> → After €1 packaging = €49 revenue → 
-                Your cost €24 → <strong>Profit €25</strong> → 
+                <strong style="color: #43e97b;">Example:</strong>
+                Customer pays <strong>€50</strong> → After €1 packaging = €49 revenue →
+                Your cost €24 → <strong>Profit €25</strong> →
                 <strong style="color: #667eea;">Margin = (25 / 49) × 100 = 51%</strong>
             </p>
         </div>
