@@ -1,63 +1,60 @@
 #!/bin/bash
 
-# 🔄 Auto-Sync Database AND Code to GitHub
-# Runs automatically via cron every 6 hours
-# Also commits any code changes on VM
+# 🔄 Smart Auto-Sync - Only commit if DATABASE changed
+# Runs EVERY SECOND via cron (but only commits when data changes!)
+# Ultra-fast backup with zero spam
 
-set -e  # Exit on error
+set -e
 
-# Timestamp
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-
-echo "🔄 Auto-sync starting at $TIMESTAMP"
-echo "📋 Current directory: $(pwd)"
+# Configuration
+DB_PATH="/opt/midad/data/midad.db"
+BRANCH="test/saad_labri"
+LOG_FILE="/opt/midad/logs/auto-sync.log"
 
 # Change to repo directory
-cd /opt/midad
+cd /opt/midad 2>/dev/null || exit 0
 
-# Check current branch
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-echo "📍 Branch: $BRANCH"
+# Check if database exists
+[ ! -f "$DB_PATH" ] && exit 0
 
-# Copy production database to git staging area
-DB_PATH="/opt/midad/data/midad.db"
-if [ -f "$DB_PATH" ]; then
-    echo "📦 Database found, syncing..."
-    # Database already in git location, no copy needed
-else
-    echo "⚠️  Warning: Database not found at $DB_PATH"
-fi
+# 🎯 SMART CHECK: Only proceed if database actually changed
+git diff --quiet HEAD -- data/midad.db && exit 0
 
-# Stage ALL changes (database + any code changes)
-git add -A
+# Database changed! Log and sync
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+DB_SIZE=$(du -h "$DB_PATH" | cut -f1)
 
-# Check if there are changes to commit
-if git diff-index --quiet HEAD --; then
-    echo "✅ No changes to sync"
-    exit 0
-fi
+# Ensure log directory exists
+mkdir -p /opt/midad/logs
 
-# Show what's being committed
-echo "📋 Changes to commit:"
-git status --short
+# Log to file (not stdout to avoid cron email spam)
+{
+    echo "[$TIMESTAMP] 📊 Database changed, syncing... (Size: $DB_SIZE)"
 
-# Commit changes
-git commit -m "auto-sync: database + code backup $TIMESTAMP" || {
-    echo "⚠️  Nothing to commit or commit failed"
-    exit 0
-}
+    # Stage ONLY the database
+    git add data/midad.db
 
-# Pull latest (rebase to avoid merge commits)
-echo "📥 Pulling latest from GitHub..."
-git pull origin $BRANCH --rebase || {
-    echo "⚠️  Warning: Pull failed, will try push anyway"
-}
+    # Commit
+    if git commit -m "db: auto-sync $TIMESTAMP" 2>&1; then
+        echo "[$TIMESTAMP] ✅ Committed"
+    else
+        echo "[$TIMESTAMP] ⚠️  Commit failed"
+        exit 0
+    fi
 
-# Push to GitHub
-echo "📤 Pushing to GitHub..."
-if git push origin $BRANCH; then
-    echo "✅ Database + code synced to GitHub: $TIMESTAMP"
-else
-    echo "❌ Push failed at $TIMESTAMP"
-    exit 1
-fi
+    # Pull latest (rebase)
+    if git pull origin $BRANCH --rebase 2>&1; then
+        echo "[$TIMESTAMP] 📥 Pulled latest"
+    else
+        echo "[$TIMESTAMP] ⚠️  Pull failed, trying push anyway"
+    fi
+
+    # Push to GitHub
+    if git push origin $BRANCH 2>&1; then
+        echo "[$TIMESTAMP] ✅ Synced to GitHub successfully"
+        echo "[$TIMESTAMP] 🎉 Auto-sync complete"
+    else
+        echo "[$TIMESTAMP] ❌ Push failed"
+        exit 1
+    fi
+} >> "$LOG_FILE" 2>&1
