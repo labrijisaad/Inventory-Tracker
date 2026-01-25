@@ -39,12 +39,13 @@ def render_inventory_page():
     sold_out_books = get_books("sold")
     sold_out_count = len(sold_out_books)
 
-    # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
+    # ✅ UPDATED: Added 5th tab - Book Inspector
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         f"📦 Active Inventory ({stats['active_count']})",
         f"🔄 Restock ({sold_out_count})",
         "💰 Sales History",
-        "📊 Book Performance"
+        "📊 Book Performance",
+        "🔍 Book Inspector"
     ])
 
     with tab1:
@@ -58,6 +59,9 @@ def render_inventory_page():
 
     with tab4:
         _render_book_performance_table()
+
+    with tab5:
+        _render_book_inspector()
 
 
 # ============================================================================
@@ -1482,3 +1486,833 @@ def _render_book_performance_table():
                     st.caption(f"{book['current_stock']} copies idle")
             else:
                 st.success("✅ All moving well")
+
+# ============================================================================
+# TAB 5: BOOK INSPECTOR (DEEP-DIVE ANALYTICS FOR INDIVIDUAL BOOKS)
+# ============================================================================
+def _render_book_inspector():
+    """Comprehensive analytics for a single book with advanced visualizations."""
+
+    st.markdown("### 🔍 Book Inspector")
+    st.caption("💡 Deep-dive analytics for books with sales history")
+
+    # Get all books and sales data
+    all_books = get_books()
+
+    if not all_books:
+        st.info("📭 No books in database")
+        return
+
+    # Get sales with customer names
+    from src.data.database import get_sales, get_customers
+    all_sales_raw = get_sales()
+    customers = get_customers()
+    customer_map = {c['id']: c['name'] for c in customers}
+
+    # Filter books - ONLY show books with at least 1 sale
+    books_with_sales_ids = set(s['book_id'] for s in all_sales_raw)
+    books_with_sales = [b for b in all_books if b['id'] in books_with_sales_ids]
+
+    if not books_with_sales:
+        st.markdown(
+            """
+            <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
+                        padding: 24px; border-radius: 12px; border-left: 4px solid #f59e0b; text-align: center;">
+                <h3 style="color: #fbbf24; margin: 0 0 12px 0;">📊 No Sales Data Yet</h3>
+                <p style="color: #fcd34d; margin: 0; font-size: 14px;">
+                    No books have been sold yet. Record your first sale to unlock analytics!
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        return
+
+    # ============================================================================
+    # BOOK SELECTION - SORTED BY COPIES SOLD
+    # ============================================================================
+    st.markdown("---")
+
+    # ✅ Calculate sales count per book
+    books_sales_count = {}
+    for sale in all_sales_raw:
+        book_id = sale['book_id']
+        books_sales_count[book_id] = books_sales_count.get(book_id, 0) + sale['qty']
+
+    # ✅ SORT BY COPIES SOLD (DESCENDING)
+    books_with_sales_sorted = sorted(
+        books_with_sales,
+        key=lambda x: books_sales_count.get(x['id'], 0),
+        reverse=True
+    )
+
+    # Separate active from sold out (but keep sort order)
+    active_books = [b for b in books_with_sales_sorted if b['stock'] > 0]
+    sold_out_books = [b for b in books_with_sales_sorted if b['stock'] == 0]
+
+    book_options = {}
+
+    if active_books:
+        book_options["─── 📗 ACTIVE BOOKS (WITH SALES) ───"] = None
+        for b in active_books:
+            total_sold = books_sales_count.get(b['id'], 0)
+            book_options[f"📗 {b['id']} - {b['title'][:35]} ({total_sold} sold | {b['stock']} in stock)"] = b['id']
+
+    if sold_out_books:
+        book_options["─── 📕 SOLD OUT BOOKS ───"] = None
+        for b in sold_out_books:
+            total_sold = books_sales_count.get(b['id'], 0)
+            book_options[f"📕 {b['id']} - {b['title'][:35]} ({total_sold} sold)"] = b['id']
+
+    book_options = {"📊 Select a book to analyze...": None, **book_options}
+
+    selected_display = st.selectbox(
+        "Choose book:",
+        list(book_options.keys()),
+        key="book_inspector_select",
+        label_visibility="collapsed"
+    )
+
+    selected_book_id = book_options[selected_display]
+
+    if not selected_book_id:
+        st.info("👆 Select a book from the dropdown above to view detailed analytics")
+
+        # Show summary stats
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Books with Sales", len(books_with_sales))
+        with col2:
+            total_transactions = len(set(
+                s['bundle_id'] if s['bundle_id'] else f"sale_{s['id']}"
+                for s in all_sales_raw
+            ))
+            st.metric("Total Transactions", total_transactions)
+        with col3:
+            total_copies = sum(s['qty'] for s in all_sales_raw)
+            st.metric("Total Copies Sold", total_copies)
+
+        return
+
+    # Get selected book
+    selected_book = next((b for b in books_with_sales_sorted if b['id'] == selected_book_id), None)
+
+    if not selected_book:
+        st.error("❌ Book not found")
+        return
+
+    # ============================================================================
+    # GET SALES DATA FOR THIS BOOK
+    # ============================================================================
+    book_sales = []
+    for sale in all_sales_raw:
+        if sale['book_id'] == selected_book_id:
+            sale_with_customer = sale.copy()
+            sale_with_customer['customer_name'] = customer_map.get(sale['customer_id'], 'Unknown')
+            book_sales.append(sale_with_customer)
+
+    if not book_sales:
+        st.warning("⚠️ This book should have sales but none found (data error)")
+        return
+
+    # ============================================================================
+    # BOOK HEADER CARD
+    # ============================================================================
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    status_color = "#10b981" if selected_book['stock'] > 0 else "#ef4444"
+    status_text = f"{selected_book['stock']} in stock" if selected_book['stock'] > 0 else "SOLD OUT"
+
+    st.markdown(
+        f"""
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+                    padding: 24px; border-radius: 16px; border-left: 5px solid #667eea; margin-bottom: 20px;">
+            <h2 style="color: #b8b8ff; margin: 0 0 8px 0; font-size: 24px;">
+                📖 {selected_book['title']}
+            </h2>
+            <p style="color: #9ca3af; margin: 0 0 12px 0; font-size: 14px;">
+                ✍️ by {selected_book['author'] if selected_book['author'] else 'Unknown Author'} •
+                📚 {selected_book['genre']} •
+                🆔 {selected_book['id']}
+            </p>
+            <div style="display: inline-block; background: {status_color}; color: white;
+                        padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                📦 {status_text}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ============================================================================
+    # CALCULATE COMPREHENSIVE METRICS
+    # ============================================================================
+
+    # Total metrics
+    total_copies_sold = sum(s['qty'] for s in book_sales)
+    total_transactions = len(set(s['bundle_id'] if s['bundle_id'] else f"sale_{s['id']}" for s in book_sales))
+
+    # Financial metrics
+    total_revenue_gross = sum(s['total'] for s in book_sales)
+    total_packaging = sum(s['packaging_per_book'] * s['qty'] for s in book_sales)
+    total_revenue_net = total_revenue_gross - total_packaging
+    total_cost = sum(selected_book['buy_price'] * s['qty'] for s in book_sales)
+    total_profit = total_revenue_net - total_cost
+    avg_margin = (total_profit / total_revenue_net * 100) if total_revenue_net > 0 else 0
+
+    # Pricing metrics
+    avg_price_per_book = total_revenue_gross / total_copies_sold if total_copies_sold > 0 else 0
+    min_price = min(s['total'] / s['qty'] for s in book_sales) if book_sales else 0
+    max_price = max(s['total'] / s['qty'] for s in book_sales) if book_sales else 0
+
+    # Time metrics
+    first_sale_date = min(datetime.strptime(s['date'], "%Y-%m-%d") for s in book_sales)
+    last_sale_date = max(datetime.strptime(s['date'], "%Y-%m-%d") for s in book_sales)
+    days_selling = (last_sale_date - first_sale_date).days + 1
+    velocity = total_copies_sold / days_selling if days_selling > 0 else 0
+
+    # Advanced restocking metrics
+    revenue_per_day = total_revenue_net / days_selling if days_selling > 0 else 0
+    profit_per_day = total_profit / days_selling if days_selling > 0 else 0
+
+    # Stock runway (days until out of stock at current velocity)
+    if velocity > 0 and selected_book['stock'] > 0:
+        days_until_stockout = selected_book['stock'] / velocity
+    else:
+        days_until_stockout = 0
+
+    # ROI metrics
+    total_invested = selected_book['buy_price'] * (total_copies_sold + selected_book['stock'])
+    roi_percentage = (total_profit / total_cost * 100) if total_cost > 0 else 0
+
+    # Inventory turnover
+    avg_inventory = (total_copies_sold + selected_book['stock']) / 2
+    turnover_ratio = total_copies_sold / avg_inventory if avg_inventory > 0 else 0
+
+    # Platform breakdown (keep for chart only)
+    platform_breakdown = {}
+    for sale in book_sales:
+        platform = sale['platform']
+        if platform not in platform_breakdown:
+            platform_breakdown[platform] = {'count': 0, 'revenue': 0}
+        platform_breakdown[platform]['count'] += sale['qty']
+        platform_breakdown[platform]['revenue'] += sale['total']
+
+    # ============================================================================
+    # KEY METRICS CARDS
+    # ============================================================================
+    st.markdown("### 📊 Performance Overview")
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 20px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);">
+                <h3 style="margin: 0; font-size: 28px;">📦</h3>
+                <p style="margin: 8px 0; font-size: 11px; opacity: 0.95; font-weight: 600;">COPIES SOLD</p>
+                <h2 style="margin: 5px 0; font-size: 24px; font-weight: 700;">{total_copies_sold}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 10px; opacity: 0.9;">{total_transactions} orders</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                        padding: 20px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(17, 153, 142, 0.3);">
+                <h3 style="margin: 0; font-size: 28px;">💰</h3>
+                <p style="margin: 8px 0; font-size: 11px; opacity: 0.95; font-weight: 600;">REVENUE</p>
+                <h2 style="margin: 5px 0; font-size: 24px; font-weight: 700;">€{total_revenue_net:.2f}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 10px; opacity: 0.9;">€{revenue_per_day:.2f}/day</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col3:
+        profit_color_grad = "#10b981" if total_profit >= 0 else "#ef4444"
+        profit_icon = "📈" if total_profit >= 0 else "📉"
+
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, {profit_color_grad} 0%, {profit_color_grad}dd 100%);
+                        padding: 20px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);">
+                <h3 style="margin: 0; font-size: 28px;">{profit_icon}</h3>
+                <p style="margin: 8px 0; font-size: 11px; opacity: 0.95; font-weight: 600;">PROFIT</p>
+                <h2 style="margin: 5px 0; font-size: 24px; font-weight: 700;">€{total_profit:.2f}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 10px; opacity: 0.9;">€{profit_per_day:.2f}/day</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col4:
+        velocity_color = "#f093fb" if velocity > 0.5 else "#fbbf24" if velocity > 0.2 else "#9ca3af"
+        velocity_label = "HOT" if velocity > 0.5 else "STEADY" if velocity > 0.2 else "SLOW"
+
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, {velocity_color} 0%, {velocity_color}dd 100%);
+                        padding: 20px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(240, 147, 251, 0.3);">
+                <h3 style="margin: 0; font-size: 28px;">⚡</h3>
+                <p style="margin: 8px 0; font-size: 11px; opacity: 0.95; font-weight: 600;">VELOCITY</p>
+                <h2 style="margin: 5px 0; font-size: 24px; font-weight: 700;">{velocity:.2f}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 10px; opacity: 0.9;">copies/day • {velocity_label}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col5:
+        # Stock runway color coding
+        if days_until_stockout == 0:
+            runway_color = "#ef4444"
+            runway_label = "OUT"
+        elif days_until_stockout < 7:
+            runway_color = "#f59e0b"
+            runway_label = "CRITICAL"
+        elif days_until_stockout < 30:
+            runway_color = "#fbbf24"
+            runway_label = "LOW"
+        else:
+            runway_color = "#10b981"
+            runway_label = "GOOD"
+
+        runway_display = f"{int(days_until_stockout)}" if days_until_stockout > 0 else "0"
+
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, {runway_color} 0%, {runway_color}dd 100%);
+                        padding: 20px; border-radius: 12px; text-align: center; color: white;
+                        box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);">
+                <h3 style="margin: 0; font-size: 28px;">⏱️</h3>
+                <p style="margin: 8px 0; font-size: 11px; opacity: 0.95; font-weight: 600;">STOCK RUNWAY</p>
+                <h2 style="margin: 5px 0; font-size: 24px; font-weight: 700;">{runway_display}</h2>
+                <p style="margin: 8px 0 0 0; font-size: 10px; opacity: 0.9;">days • {runway_label}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # RESTOCKING INTELLIGENCE PANEL
+    # ============================================================================
+    st.markdown("### 🎯 Restocking Intelligence")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("ROI", f"{roi_percentage:.1f}%", help="Return on Investment: Profit / Cost")
+        st.caption(f"Invested: €{total_cost:.2f}")
+
+    with col2:
+        st.metric("Margin", f"{avg_margin:.1f}%")
+        if avg_margin > 50:
+            st.caption("🟢 Excellent")
+        elif avg_margin > 30:
+            st.caption("🟡 Good")
+        else:
+            st.caption("🔴 Low")
+
+    with col3:
+        st.metric("Turnover", f"{turnover_ratio:.2f}x", help="Inventory turnover ratio")
+        if turnover_ratio > 5:
+            st.caption("🔥 Fast moving")
+        elif turnover_ratio > 2:
+            st.caption("✅ Healthy")
+        else:
+            st.caption("⚠️ Slow")
+
+    with col4:
+        sell_through = (total_copies_sold / (total_copies_sold + selected_book['stock']) * 100)
+        st.metric("Sell-Through", f"{sell_through:.1f}%")
+        if sell_through > 80:
+            st.caption("🟢 High demand")
+        elif sell_through > 50:
+            st.caption("🟡 Moderate")
+        else:
+            st.caption("🔴 Low demand")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # PLOTLY CHARTS - ENHANCED VISUALIZATIONS
+    # ============================================================================
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    # Sort sales by date
+    book_sales_sorted = sorted(book_sales, key=lambda x: x['date'])
+
+    # ============================================================================
+    # CHART 1: SALES FREQUENCY & REVENUE TIMELINE
+    # ============================================================================
+    st.markdown("### 📅 Sales Timeline & Revenue Trend")
+
+    # Prepare data by date
+    daily_data = {}
+    for sale in book_sales_sorted:
+        date = sale['date']
+        if date not in daily_data:
+            daily_data[date] = {'qty': 0, 'revenue': 0, 'transactions': 0}
+        daily_data[date]['qty'] += sale['qty']
+        daily_data[date]['revenue'] += sale['total']
+        daily_data[date]['transactions'] += 1
+
+    dates = sorted(daily_data.keys())
+    quantities = [daily_data[d]['qty'] for d in dates]
+    revenues = [daily_data[d]['revenue'] for d in dates]
+
+    # Create figure with secondary y-axis
+    fig1 = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add bar chart for quantities
+    fig1.add_trace(
+        go.Bar(
+            x=dates,
+            y=quantities,
+            name="Copies Sold",
+            marker_color='rgba(102, 126, 234, 0.7)',
+            hovertemplate='<b>%{x}</b><br>Copies: %{y}<extra></extra>'
+        ),
+        secondary_y=False,
+    )
+
+    # Add line chart for revenue
+    fig1.add_trace(
+        go.Scatter(
+            x=dates,
+            y=revenues,
+            name="Revenue",
+            line=dict(color='#10b981', width=3),
+            mode='lines+markers',
+            marker=dict(size=8),
+            hovertemplate='<b>%{x}</b><br>Revenue: €%{y:.2f}<extra></extra>'
+        ),
+        secondary_y=True,
+    )
+
+    fig1.update_xaxes(title_text="Date")
+    fig1.update_yaxes(title_text="Copies Sold", secondary_y=False, showgrid=False)
+    fig1.update_yaxes(title_text="Revenue (€)", secondary_y=True, showgrid=True, gridcolor='rgba(128,128,128,0.2)')
+
+    fig1.update_layout(
+        height=400,
+        hovermode='x unified',
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=40, b=0),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#e5e7eb', size=11)
+    )
+
+    st.plotly_chart(fig1, width='content')
+
+    st.caption(f"📊 **Sales Pattern:** {len(dates)} active days • Avg {total_copies_sold/len(dates):.1f} copies/active day • Peak: {max(quantities)} copies in one day")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # CHART 2: PRICE ANALYSIS & RECOMMENDATION + PROFIT/REVENUE
+    # ============================================================================
+    st.markdown("### 💰 Pricing Analysis & Performance")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.caption("**Price Per Book Over Time**")
+
+        sale_dates = [datetime.strptime(s['date'], "%Y-%m-%d") for s in book_sales_sorted]
+        sale_prices = [s['total'] / s['qty'] for s in book_sales_sorted]
+
+        fig4 = go.Figure()
+
+        # Scatter plot with line
+        fig4.add_trace(go.Scatter(
+            x=sale_dates,
+            y=sale_prices,
+            mode='lines+markers',
+            marker=dict(size=10, color=sale_prices, colorscale='RdYlGn', showscale=False),
+            line=dict(color='rgba(102, 126, 234, 0.5)', width=2),
+            hovertemplate='<b>%{x|%d/%m/%Y}</b><br>Price: €%{y:.2f}<extra></extra>'
+        ))
+
+        # Add average line
+        fig4.add_hline(
+            y=avg_price_per_book,
+            line_dash="dash",
+            line_color="white",
+            annotation_text=f"Avg: €{avg_price_per_book:.2f}",
+            annotation_position="right"
+        )
+
+        fig4.update_layout(
+            height=300,
+            yaxis_title="Price (€)",
+            xaxis_title="Date",
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#e5e7eb', size=11),
+            yaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.2)')
+        )
+
+        st.plotly_chart(fig4, width='content')
+
+        # ✅ PRICING RECOMMENDATION
+        price_variance = max_price - min_price
+        recent_prices = sale_prices[-3:] if len(sale_prices) >= 3 else sale_prices
+        recent_avg = sum(recent_prices) / len(recent_prices)
+
+        # Calculate optimal price (based on current margin + market acceptance)
+        if velocity > 0.5:  # Hot seller
+            recommended_price = recent_avg * 1.1  # Can increase 10%
+        elif velocity > 0.2:  # Steady
+            recommended_price = recent_avg * 1.05  # Increase 5%
+        else:  # Slow
+            recommended_price = recent_avg * 0.95  # Maybe decrease 5%
+
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+                        padding: 16px; border-radius: 10px; border-left: 4px solid #667eea; margin-top: 10px;">
+                <p style="margin: 0 0 8px 0; color: #b8b8ff; font-size: 13px; font-weight: 600;">
+                    💡 PRICING RECOMMENDATION
+                </p>
+                <p style="margin: 0 0 6px 0; color: #e5e7eb; font-size: 15px; font-weight: 700;">
+                    Sell this book for: <span style="color: #10b981;">€{recommended_price:.2f}</span>
+                </p>
+                <p style="margin: 0; color: #9ca3af; font-size: 11px;">
+                    Based on: Recent avg €{recent_avg:.2f} • Velocity {velocity:.2f}/day • Margin {avg_margin:.0f}%
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col2:
+        st.caption("**Revenue & Profit Per Transaction**")
+
+        # ✅ SHOW BOTH REVENUE AND PROFIT
+        transaction_revenues = []
+        transaction_profits = []
+        transaction_dates = []
+
+        for sale in book_sales_sorted:
+            sale_revenue = sale['total'] - (sale['packaging_per_book'] * sale['qty'])
+            sale_cost = selected_book['buy_price'] * sale['qty']
+            sale_profit = sale_revenue - sale_cost
+
+            transaction_revenues.append(sale_revenue)
+            transaction_profits.append(sale_profit)
+            transaction_dates.append(datetime.strptime(sale['date'], "%Y-%m-%d"))
+
+        fig5 = go.Figure()
+
+        # Add revenue bars (light green background)
+        fig5.add_trace(go.Bar(
+            x=transaction_dates,
+            y=transaction_revenues,
+            name="Revenue",
+            marker_color='rgba(16, 185, 129, 0.3)',
+            hovertemplate='<b>%{x|%d/%m/%Y}</b><br>Revenue: €%{y:.2f}<extra></extra>'
+        ))
+
+        # Add profit bars (solid green/red)
+        colors = ['#10b981' if p >= 0 else '#ef4444' for p in transaction_profits]
+        fig5.add_trace(go.Bar(
+            x=transaction_dates,
+            y=transaction_profits,
+            name="Profit",
+            marker_color=colors,
+            hovertemplate='<b>%{x|%d/%m/%Y}</b><br>Profit: €%{y:.2f}<extra></extra>'
+        ))
+
+        # Add zero line
+        fig5.add_hline(y=0, line_color="white", line_width=1)
+
+        fig5.update_layout(
+            height=300,
+            yaxis_title="Amount (€)",
+            xaxis_title="Date",
+            barmode='overlay',
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#e5e7eb', size=11),
+            yaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.2)'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+
+        st.plotly_chart(fig5, width='content')
+
+        profitable_sales = sum(1 for p in transaction_profits if p >= 0)
+        avg_profit_per_sale = sum(transaction_profits) / len(transaction_profits)
+        st.caption(f"✅ {profitable_sales}/{len(transaction_profits)} sales profitable • Avg €{avg_profit_per_sale:.2f}/transaction")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # CHART 4: MONTHLY BREAKDOWN (if enough data)
+    # ============================================================================
+    if days_selling > 30:
+        st.markdown("### 📊 Monthly Performance Breakdown")
+
+        # Group by month
+        monthly_data = {}
+        for sale in book_sales_sorted:
+            date = datetime.strptime(sale['date'], "%Y-%m-%d")
+            month_key = date.strftime("%Y-%m")
+
+            if month_key not in monthly_data:
+                monthly_data[month_key] = {'copies': 0, 'revenue': 0, 'profit': 0}
+
+            sale_revenue = sale['total'] - (sale['packaging_per_book'] * sale['qty'])
+            sale_cost = selected_book['buy_price'] * sale['qty']
+            sale_profit = sale_revenue - sale_cost
+
+            monthly_data[month_key]['copies'] += sale['qty']
+            monthly_data[month_key]['revenue'] += sale['total']
+            monthly_data[month_key]['profit'] += sale_profit
+
+        months = sorted(monthly_data.keys())
+        monthly_copies = [monthly_data[m]['copies'] for m in months]
+        monthly_revenues = [monthly_data[m]['revenue'] for m in months]
+        monthly_profits = [monthly_data[m]['profit'] for m in months]
+
+        fig6 = make_subplots(
+            rows=1, cols=3,
+            subplot_titles=("Copies Sold", "Revenue", "Profit"),
+            specs=[[{"type": "bar"}, {"type": "bar"}, {"type": "bar"}]]
+        )
+
+        fig6.add_trace(
+            go.Bar(x=months, y=monthly_copies, marker_color='#667eea', name="Copies"),
+            row=1, col=1
+        )
+
+        fig6.add_trace(
+            go.Bar(x=months, y=monthly_revenues, marker_color='#11998e', name="Revenue"),
+            row=1, col=2
+        )
+
+        fig6.add_trace(
+            go.Bar(x=months, y=monthly_profits, marker_color='#10b981', name="Profit"),
+            row=1, col=3
+        )
+
+        fig6.update_layout(
+            height=300,
+            showlegend=False,
+            margin=dict(l=0, r=0, t=40, b=0),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#e5e7eb', size=10)
+        )
+
+        st.plotly_chart(fig6, width='content')
+
+        # Calculate trend
+        if len(months) >= 2:
+            recent_month_copies = monthly_copies[-1]
+            previous_month_copies = monthly_copies[-2]
+            trend = ((recent_month_copies - previous_month_copies) / previous_month_copies * 100) if previous_month_copies > 0 else 0
+
+            if trend > 10:
+                st.success(f"📈 Sales growing! {abs(trend):.0f}% increase vs previous month")
+            elif trend < -10:
+                st.warning(f"📉 Sales declining: {abs(trend):.0f}% decrease vs previous month")
+            else:
+                st.info(f"➡️ Sales stable: {abs(trend):.0f}% change vs previous month")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # DETAILED SALES HISTORY TABLE
+    # ============================================================================
+    st.markdown("### 📋 Detailed Transaction History")
+
+    with st.expander(f"📊 View all {len(book_sales)} transactions", expanded=False):
+        sales_display = []
+        for sale in reversed(book_sales_sorted):
+            sale_revenue = sale['total'] - (sale['packaging_per_book'] * sale['qty'])
+            sale_cost = selected_book['buy_price'] * sale['qty']
+            sale_profit = sale_revenue - sale_cost
+            sale_margin = (sale_profit / sale_revenue * 100) if sale_revenue > 0 else 0
+
+            sale_id_display = f"B-{sale['bundle_id'][:7]}" if sale['bundle_id'] else f"SE{sale['id']:03d}"
+
+            sales_display.append({
+                'ID': sale_id_display,
+                'Date': datetime.strptime(sale['date'], "%Y-%m-%d").strftime("%d/%m/%Y"),
+                'Customer': sale['customer_name'],
+                'Platform': sale['platform'],
+                'Qty': sale['qty'],
+                'Price/Book': f"€{sale['total'] / sale['qty']:.2f}",
+                'Total': f"€{sale['total']:.2f}",
+                'Profit': f"€{sale_profit:.2f}",
+                'Margin': f"{sale_margin:.1f}%"
+            })
+
+        st.dataframe(
+            pd.DataFrame(sales_display),
+            column_config={
+                'ID': st.column_config.TextColumn('ID', width='small'),
+                'Date': st.column_config.TextColumn('Date', width='small'),
+                'Customer': st.column_config.TextColumn('Customer', width='medium'),
+                'Platform': st.column_config.TextColumn('Platform', width='small'),
+                'Qty': st.column_config.NumberColumn('Qty', width='small'),
+                'Price/Book': st.column_config.TextColumn('Price/Book', width='small'),
+                'Total': st.column_config.TextColumn('Total', width='small'),
+                'Profit': st.column_config.TextColumn('Profit', width='small'),
+                'Margin': st.column_config.TextColumn('Margin', width='small'),
+            },
+            hide_index=True,
+            width='content'
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # ✅ IMPROVED AI RECOMMENDATIONS (VELOCITY-FOCUSED)
+    # ============================================================================
+    st.markdown("### 💡 Recommendations")
+
+    recommendations = []
+
+    # ✅ SCENARIO 1: Out of stock + Fast velocity = URGENT RESTOCK
+    if selected_book['stock'] == 0 and velocity > 0.5:
+        potential_lost_revenue = revenue_per_day * 7
+        recommended_qty = int(velocity * 30)
+        recommendations.append({
+            'type': 'error',
+            'icon': '🚨',
+            'title': 'CRITICAL: HIGH-VELOCITY BOOK OUT OF STOCK',
+            'message': f'This book sells **{velocity:.2f} copies/day** (fast mover!) but is out of stock. Losing **€{potential_lost_revenue:.2f}/week** in revenue. **RESTOCK {recommended_qty} COPIES NOW!**'
+        })
+
+    # ✅ SCENARIO 2: Out of stock + Moderate velocity = Important restock
+    elif selected_book['stock'] == 0 and velocity > 0.2:
+        recommended_qty = int(velocity * 30)
+        recommendations.append({
+            'type': 'warning',
+            'icon': '⚠️',
+            'title': 'OUT OF STOCK - STEADY SELLER',
+            'message': f'Sells {velocity:.2f} copies/day (steady pace). Out of stock. Recommend restocking **{recommended_qty} copies** (30 days supply).'
+        })
+
+    # ✅ SCENARIO 3: Out of stock + Slow velocity = Consider discontinuing
+    elif selected_book['stock'] == 0 and velocity <= 0.2:
+        recommendations.append({
+            'type': 'info',
+            'icon': '🤔',
+            'title': 'SLOW SELLER - OUT OF STOCK',
+            'message': f'Only sold {velocity:.2f} copies/day (slow). Out of stock. **Consider:** Is it worth restocking? Maybe discontinue or wait for demand.'
+        })
+
+    # ✅ SCENARIO 4: Low stock + Fast velocity = Urgent restock
+    elif 0 < days_until_stockout < 7 and velocity > 0.5:
+        recommended_qty = int(velocity * 30)
+        recommendations.append({
+            'type': 'error',
+            'icon': '🔥',
+            'title': 'FAST-MOVING BOOK - LOW STOCK ALERT',
+            'message': f'Only **{days_until_stockout:.0f} days** of stock left! Sells **{velocity:.2f} copies/day** (hot!). Restock **{recommended_qty} copies** ASAP to avoid stockout.'
+        })
+
+    # ✅ SCENARIO 5: Low stock + Moderate velocity = Plan restock
+    elif 0 < days_until_stockout < 14 and velocity > 0.2:
+        recommended_qty = int(velocity * 30)
+        recommendations.append({
+            'type': 'warning',
+            'icon': '⏰',
+            'title': 'PLAN RESTOCK SOON',
+            'message': f'{days_until_stockout:.0f} days of stock remaining (sells {velocity:.2f}/day). Recommend ordering **{recommended_qty} copies** for next 30 days.'
+        })
+
+    # ✅ SCENARIO 6: In stock + Slow sales = Needs marketing
+    elif selected_book['stock'] > 5 and velocity < 0.1:
+        recommendations.append({
+            'type': 'info',
+            'icon': '📣',
+            'title': 'SLOW MOVER - NEEDS PROMOTION',
+            'message': f'{selected_book["stock"]} copies in stock but only selling {velocity:.2f}/day. Try: Better photos, bundle deals, price discount, or Instagram promotion.'
+        })
+
+    # ✅ SCENARIO 7: Good stock + Fast velocity = Winner
+    elif selected_book['stock'] > 0 and velocity > 0.5:
+        recommendations.append({
+            'type': 'success',
+            'icon': '🏆',
+            'title': 'WINNING PRODUCT',
+            'message': f'Hot seller! {velocity:.2f} copies/day with {selected_book["stock"]} in stock. **Keep this stocked at all times.** Consider bulk ordering for better margins.'
+        })
+
+    # ✅ SCENARIO 8: Healthy stock + Steady velocity = All good
+    elif selected_book['stock'] > 0 and velocity > 0.2 and days_until_stockout > 14:
+        recommendations.append({
+            'type': 'success',
+            'icon': '✅',
+            'title': 'HEALTHY INVENTORY',
+            'message': f'Good balance: {selected_book["stock"]} copies, {velocity:.2f}/day velocity, {days_until_stockout:.0f} days runway. No action needed right now.'
+        })
+
+    # Display recommendations
+    if recommendations:
+        for rec in recommendations:
+            if rec['type'] == 'success':
+                st.success(f"{rec['icon']} **{rec['title']}**\n\n{rec['message']}")
+            elif rec['type'] == 'warning':
+                st.warning(f"{rec['icon']} **{rec['title']}**\n\n{rec['message']}")
+            elif rec['type'] == 'info':
+                st.info(f"{rec['icon']} **{rec['title']}**\n\n{rec['message']}")
+            elif rec['type'] == 'error':
+                st.error(f"{rec['icon']} **{rec['title']}**\n\n{rec['message']}")
+    else:
+        st.info("✅ No urgent actions needed. Book performance is stable.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ============================================================================
+    # INVENTORY STATUS & BOOK DETAILS
+    # ============================================================================
+    with st.expander("📦 **Inventory Status & Book Details**", expanded=False):
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("**📊 Inventory Metrics**")
+            total_copies_ever = total_copies_sold + selected_book['stock']
+            st.caption(f"**Total Copies Ever:** {total_copies_ever}")
+            st.caption(f"**Copies Sold:** {total_copies_sold} ({sell_through:.1f}%)")
+            st.caption(f"**Current Stock:** {selected_book['stock']}")
+            st.caption(f"**Stock Runway:** {int(days_until_stockout)} days" if days_until_stockout > 0 else "**Stock Runway:** Out of stock")
+
+        with col2:
+            st.markdown("**💰 Financial Summary**")
+            st.caption(f"**Total Invested:** €{total_invested:.2f}")
+            st.caption(f"**Total Revenue:** €{total_revenue_net:.2f}")
+            st.caption(f"**Total Profit:** €{total_profit:.2f}")
+            st.caption(f"**ROI:** {roi_percentage:.1f}%")
+
+        with col3:
+            st.markdown("**📚 Book Info**")
+            st.caption(f"**ID:** `{selected_book['id']}`")
+            st.caption(f"**Author:** {selected_book['author'] if selected_book['author'] else 'Not specified'}")
+            st.caption(f"**Genre:** {selected_book['genre']}")
+            st.caption(f"**Added:** {selected_book['created_at']}")
+
+        if selected_book.get('notes'):
+            st.markdown("---")
+            st.markdown("**📝 Notes**")
+            st.caption(selected_book['notes'])
