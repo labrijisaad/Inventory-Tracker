@@ -1,8 +1,3 @@
-"""
-Import Sales Data - Keeps Existing Inventory
-Adds 36 historical sales and auto-updates stock levels
-"""
-
 import sys
 from pathlib import Path
 
