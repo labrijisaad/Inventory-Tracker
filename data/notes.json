@@ -1,26 +1,5 @@
 [
   {
-    "id": 2,
-    "title": "Bn8",
-    "content": "Bn8",
-    "date": "2026-01-16 22:48:16",
-    "files": []
-  },
-  {
-    "id": 3,
-    "title": "test",
-    "content": "haha",
-    "date": "2026-01-25 15:37:55",
-    "files": []
-  },
-  {
-    "id": 4,
-    "title": "haha",
-    "content": "hahaha",
-    "date": "2026-01-25 15:46:12",
-    "files": []
-  },
-  {
     "id": 5,
     "title": "backup",
     "content": "last inventory",
@@ -28,5 +7,12 @@
     "files": [
       "5_Capture d'écran 2026-02-07 223151.png"
     ]
+  },
+  {
+    "id": 6,
+    "title": "Next books to add",
+    "content": "#### books list\n- جلال الدين الرومي - قواعد العشق - BOOK-044\n- إتش.جاكسون براون ،الابن ، و روتشيل بنينجتون - مميز بالأصفر -  جيمس كلير - العادات الذرية - BOOK-045\n- فن قراءة العقول - هنريك فيكسيوس - BOOK-046\n- فهد عامر الأحمدي - نظرية الفستق - BOOK-047\n- أغاثا كريستي - الأصابع المتحركة - BOOK-048\n- جيمس كلير - العادات الذرية - BOOK-049\n\n#### dev\nMake sure the add can add also book name (not only names in 4 languages)\n\n#### books check\nfrom `BOOK-015` to `BOOK-045`\n\n#### Check inventory if correct\ncompare last sales in vinted and check if all good",
+    "date": "2026-02-07 23:16:36",
+    "files": []
   }
 ]
